@@ -3,6 +3,11 @@ import importlib
 import MetaTrader5 as mt5
 from data_manager import DataManager
 
+
+dm = DataManager()
+#Check if files are inplace or creates dataset if not
+dm.files_inplace()
+
 module_list = ['MetaTrader5','pandas','numpy']
 missing_modules = list()
 
@@ -16,6 +21,6 @@ if not mt5.initialize():
     print("initialize() failed, error code =",mt5.last_error())
     quit()
 
-dm = DataManager()
+print('Ready for work')
 
-dm.download_stock()
+#dm.download_stock()
