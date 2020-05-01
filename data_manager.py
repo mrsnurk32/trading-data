@@ -7,8 +7,8 @@ import os
 
 
 
-#Datamanger purpose is to download, store and update Data
-class DataManager:
+#Filemanger purpose is to download, store and update Data
+class FileManager:
 
     def __init__(self):
         self.storage_directory = os.getcwd().replace('\\','/')

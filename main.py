@@ -1,12 +1,12 @@
 import os
 import importlib
 import MetaTrader5 as mt5
-from data_manager import DataManager
+from data_manager import FileManager
 
 
-dm = DataManager()
+fm = FileManager()
 #Check if files are inplace or creates dataset if not
-dm.files_inplace()
+fm.files_inplace()
 
 module_list = ['MetaTrader5','pandas','numpy']
 missing_modules = list()
