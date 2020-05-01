@@ -1,7 +1,7 @@
 import os
 import importlib
 import MetaTrader5 as mt5
-from data_manager import FileManager
+from file_manager import FileManager
 
 
 fm = FileManager()
