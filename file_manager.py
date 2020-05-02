@@ -68,5 +68,5 @@ class FileManager:
         rates_frame = pd.DataFrame(rates)
         rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
         #print(rates_frame)
-        rates_frame.to_sql(name="YNDX",con = conn,index=False)
+        rates_frame.to_sql(name=ticker,con = conn,index=False)
         conn.close()
