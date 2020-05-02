@@ -27,18 +27,40 @@ class FileManager:
         #If everything is fine returns True
         arr = os.listdir(self.storage_directory)
         #print(arr)
+
+        stock_db_dir = '{}/stock_data'.format(self.storage_directory)
+
         if 'stock_data' not in arr:
-            os.mkdir('{}/stock_data'.format(self.storage_directory))
+            os.mkdir(stock_db_dir)
 
         if not os.path.exists(
-            '{}/stock_data/fin_data.db'.format(self.storage_directory)):
+            '{}/fin_data.db'.format(stock_db_dir)):
             conn = sql.connect(
-                '{}/stock_data/fin_data.db'.format(self.storage_directory))
+                '{}/fin_data.db'.format(stock_db_dir))
             #conn.cursor()
             conn.close()
 
         return True
 
+    def stock_info_table(self):
+        #Creates table to store stock update info
+        conn = sql.connect(
+            '{}/stock_data/fin_data.db'.format(self.storage_directory))
+
+        c = conn.cursor()
+
+        c.execute("""
+                  CREATE TABLE IF NOT EXISTS stock_info (
+                    Ticker text PRIMARY KEY,
+                    Currency text,
+                    Frame integer,
+                    Market text,
+                    UpdateDate text,
+                    UpdateHour text
+                  )
+                  """)
+        conn.commit()
+        conn.close()
 
     def download_stock(self,ticker):
 
