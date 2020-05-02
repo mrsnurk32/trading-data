@@ -1,8 +1,15 @@
 import os
-
-
+import importlib
+import MetaTrader5 as mt5
+import pytz
+from datetime import datetime
+import pandas as pd
+import sqlite3 as sql
 
 #Filemanger purpose is maintain all files directories
+#FileManager will also download, store and update Data
+
+
 class FileManager:
 
     def __init__(self):
@@ -31,3 +38,35 @@ class FileManager:
             conn.close()
 
         return True
+
+
+    def download_stock(self,ticker):
+
+        """
+        TimeFrame = [
+            TIMEFRAME_M1,
+            TIMEFRAME_H1,
+            TIMEFRAME_D1,
+            TIMEFRAME_W1,
+            TIMEFRAME_MON1
+        ]
+        """
+
+
+        #Download scenario
+        conn = sql.connect(
+            '{}/stock_data/fin_data.db'.format(self.storage_directory))
+
+        timezone = pytz.timezone('Europe/Moscow')
+
+        ymd = datetime.today().strftime('%Y-%m-%d')
+        ymd = [int(i) for i in ymd.split('-')]
+        y,m,d = ymd[0],ymd[1],ymd[2]
+        utc_from = datetime(y, m, d, tzinfo=timezone)
+
+        rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_H1, utc_from, 50000)
+        rates_frame = pd.DataFrame(rates)
+        rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
+        #print(rates_frame)
+        rates_frame.to_sql(name="YNDX",con = conn,index=False)
+        conn.close()
