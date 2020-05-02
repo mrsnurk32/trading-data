@@ -2,6 +2,10 @@ import os
 import importlib
 import MetaTrader5 as mt5
 from file_manager import FileManager
+import pytz
+from datetime import datetime
+import pandas as pd
+import sqlite3 as sql
 
 
 fm = FileManager()
@@ -23,4 +27,19 @@ if not mt5.initialize():
 
 print('Ready for work')
 
+
+
+#Download scenario
+conn = sql.connect(
+    '{}/stock_data/fin_data.db'.format(fm.storage_directory))
+
+timezone = pytz.timezone('Europe/Moscow')
+utc_from = datetime(2020, 5, 10, tzinfo=timezone)
+
+rates = mt5.copy_rates_from("YNDX", mt5.TIMEFRAME_H1, utc_from, 50000)
+rates_frame = pd.DataFrame(rates)
+rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
+print(rates_frame)
+rates_frame.to_sql(name="YNDX",con = conn,index=False)
+conn.close()
 #dm.download_stock()
