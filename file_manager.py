@@ -62,12 +62,42 @@ class FileManager:
         conn.commit()
         conn.close()
 
+    def updateStamp(self,ticker):
+
+        stock_db_dir = '{}/stock_data'.format(self.storage_directory)
+        conn = sql.connect('{}/fin_data.db'.format(stock_db_dir))
+        c = conn.cursor()
+
+        c.execute("""INSERT INTO stock_info (
+                  Ticker,Currency,Frame,Market,UpdateDate,UpDateHour)
+                  VALUES({},{},{},{},{},{});
+                  """.format(
+                      ticker,
+                      currency,
+                      frame,
+                      market,
+                      UpdateDate,
+                      UpdateHour))
+
+        #index = int(df[df.Code == code].index.values)
+        #df.UpdateDate.iloc[index] = datetime.date.today().strftime('%Y.%m.%d')
+        #df.UpdateHour.iloc[index] = datetime.datetime.now().hour
+        #df.to_csv('stock_data/stock_info/stock_info.csv',index = False)
+        #return 'Stamp done'
+
+
+
+
     def download_stock(self,ticker):
+
+        currency = 'Rub'
+        frame = '1H'
+        market = 'ФР МБ'
 
         """
         TimeFrame = [
             TIMEFRAME_M1,
-            TIMEFRAME_H1,
+         -> TIMEFRAME_H1,
             TIMEFRAME_D1,
             TIMEFRAME_W1,
             TIMEFRAME_MON1
@@ -89,6 +119,18 @@ class FileManager:
         rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_H1, utc_from, 50000)
         rates_frame = pd.DataFrame(rates)
         rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
-        #print(rates_frame)
+        if len(rates_frame) < 1:
+            return "Check frame data ticker:{}".format(ticker)
+
+        UpdateDate = datetime.today().strftime('%Y.%m.%d')
+        UpdateHour = datetime.now().hour
+
         rates_frame.to_sql(name=ticker,con = conn,index=False)
+        c = conn.cursor()
+        c.execute("""INSERT INTO stock_info (
+                  Ticker,Currency,Frame,Market,UpdateDate,UpDateHour)
+                  VALUES(?,?,?,?,?,?);
+                  """,(ticker, currency, frame,
+                      market, UpdateDate, UpdateHour))
+        conn.commit()
         conn.close()
