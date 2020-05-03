@@ -8,8 +8,8 @@ import sqlite3 as sql
 
 fm = FileManager()
 
-#Check if files are inplace or creates dataset if not
 
+#Check if files are inplace or creates dataset if not
 
 fm.files_inplace()
 
@@ -21,8 +21,8 @@ for module in module_list:
     if item is None:os.system(
         'cmd /c"pip install {}"'.format(module))
 
-#Check if stock_info table is inplace
 
+#Check if stock_info table is inplace
 
 c = sql.connect(
     '{}/stock_data/fin_data.db'.format(fm.storage_directory)).cursor()
@@ -35,8 +35,8 @@ table_lst = [i[0] for i in table_lst.fetchall()]
 if "stock_info" not in table_lst:fm.stock_info_table()
 c.close()
 
-#initialize connection to MetaTrader5 terminal
 
+#initialize connection to MetaTrader5 terminal
 
 if not mt5.initialize():
     print("initialize() failed, error code =",mt5.last_error())
