@@ -5,6 +5,7 @@ import pytz
 from datetime import datetime
 import pandas as pd
 import sqlite3 as sql
+from sqlite3 import Error
 
 #Filemanger purpose is maintain all files directories
 #FileManager will also download, store and update Data
@@ -16,12 +17,15 @@ class FileManager:
         self.storage_directory = os.getcwd().replace('\\','/')
         self.timezone = pytz.timezone("Etc/UTC")
 
+
     def default_path(self):
         print(os.getcwd())
         self.storage_directory = os.getcwd().replace('\\','/')
 
+
     def custom_path(self):
         self.storage_directory = input('Enter path')
+
 
     def files_inplace(self):
         #This method tracks if files exist in directory mentioned in self.storage_directory
@@ -43,10 +47,26 @@ class FileManager:
 
         return True
 
+
+    def connect_to_db(self):
+        db_file_path = '{}/stock_data/fin_data.db'.format(
+            self.storage_directory)
+
+        sqlite3_conn = None
+
+        try:
+            sqlite3_conn = sql.connect(db_file_path)
+            return sqlite3_conn
+        except Error as err:
+            print(err)
+
+            if sqlite3_conn is not None:
+                sqlite3_conn.close()
+
+
     def stock_info_table(self):
         #Creates table to store stock update info
-        conn = sql.connect(
-            '{}/stock_data/fin_data.db'.format(self.storage_directory))
+        conn = self.connect_to_db()
 
         c = conn.cursor()
 
@@ -63,10 +83,10 @@ class FileManager:
         conn.commit()
         conn.close()
 
+
     def updateStamp(self,ticker):
 
-        stock_db_dir = '{}/stock_data'.format(self.storage_directory)
-        conn = sql.connect('{}/fin_data.db'.format(stock_db_dir))
+        conn = self.connect_to_db()
         c = conn.cursor()
 
         c.execute("""INSERT INTO stock_info (
@@ -79,14 +99,6 @@ class FileManager:
                       market,
                       UpdateDate,
                       UpdateHour))
-
-        #index = int(df[df.Code == code].index.values)
-        #df.UpdateDate.iloc[index] = datetime.date.today().strftime('%Y.%m.%d')
-        #df.UpdateHour.iloc[index] = datetime.datetime.now().hour
-        #df.to_csv('stock_data/stock_info/stock_info.csv',index = False)
-        #return 'Stamp done'
-
-
 
 
     def download_stock(self,ticker):
@@ -107,8 +119,7 @@ class FileManager:
 
 
         #Download scenario
-        conn = sql.connect(
-            '{}/stock_data/fin_data.db'.format(self.storage_directory))
+        conn = self.connect_to_db()
 
         timezone = pytz.timezone("Etc/UTC")
 
