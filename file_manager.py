@@ -14,6 +14,7 @@ class FileManager:
 
     def __init__(self):
         self.storage_directory = os.getcwd().replace('\\','/')
+        self.timezone = pytz.timezone("Etc/UTC")
 
     def default_path(self):
         print(os.getcwd())
