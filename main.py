@@ -64,8 +64,11 @@ c = sql.connect(
 #     utc_from = datetime(y, m, d, tzinfo=timezone)
 #     print(utc_from)
 #     #print(date,time)
-timezone = pytz.timezone('Europe/Moscow')
-utc_from = datetime(2020, 1, 10, tzinfo=timezone)
+timezone = pytz.timezone("Etc/UTC")
+
+#real hour = hour - 2
+
+utc_from = datetime(2020, 1, 10, hour = 11, tzinfo=timezone)
 utc_to = datetime(2020, 1, 13,hour=23, tzinfo=timezone)
 rates = mt5.copy_rates_range("YNDX", mt5.TIMEFRAME_H1, utc_from, utc_to)
 # создадим из полученных данных DataFrame

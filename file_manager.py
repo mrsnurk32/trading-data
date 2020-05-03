@@ -109,7 +109,7 @@ class FileManager:
         conn = sql.connect(
             '{}/stock_data/fin_data.db'.format(self.storage_directory))
 
-        timezone = pytz.timezone('Europe/Moscow')
+        timezone = pytz.timezone("Etc/UTC")
 
         ymd = datetime.today().strftime('%Y-%m-%d')
         ymd = [int(i) for i in ymd.split('-')]
