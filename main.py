@@ -3,13 +3,14 @@ import importlib
 import MetaTrader5 as mt5
 from file_manager import FileManager
 import pytz
-from datetime import datetime
-import pandas as pd
 import sqlite3 as sql
 
 
 fm = FileManager()
+
 #Check if files are inplace or creates dataset if not
+
+
 fm.files_inplace()
 
 module_list = ['MetaTrader5','pandas','numpy']
@@ -20,11 +21,37 @@ for module in module_list:
     if item is None:os.system(
         'cmd /c"pip install {}"'.format(module))
 
+#Check if stock_info table is inplace
+
+
+c = sql.connect(
+    '{}/stock_data/fin_data.db'.format(fm.storage_directory)).cursor()
+
+table_lst = c.execute(
+    "SELECT name FROM sqlite_master WHERE type='table';")
+
+table_lst = [i[0] for i in table_lst.fetchall()]
+
+if "stock_info" not in table_lst:fm.stock_info_table()
+c.close()
+
 #initialize connection to MetaTrader5 terminal
+
+
 if not mt5.initialize():
     print("initialize() failed, error code =",mt5.last_error())
     quit()
 
 print('Ready for work')
 
-fm.download_stock("YNDX")
+"""
+conn = sql.connect(
+    '{}/stock_data/fin_data.db'.format(fm.storage_directory))
+
+c = conn.cursor()
+c.execute(
+    "SELECT name FROM sqlite_master WHERE type='table';")
+print(c.fetchall()[0])
+conn.close()
+"""
+#fm.download_stock("GAZP")
