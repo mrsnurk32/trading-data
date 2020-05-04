@@ -240,3 +240,48 @@ class FileManager:
             hours = hour) - dt.timedelta(hours = h,minutes = m,seconds = s)
         time_left = time_left.total_seconds() + exhange_mins
         time.sleep(time_left)
+
+
+if __name__ == "__main__":
+
+
+    fm = FileManager()
+    #Check if files are inplace or creates dataset if not
+    fm.files_inplace()
+
+    module_list = ['MetaTrader5','pandas','numpy']
+    missing_modules = list()
+
+    for module in module_list:
+        item = importlib.util.find_spec(module)
+        if item is None:os.system(
+            'cmd /c"pip install {}"'.format(module))
+
+
+    #Check if stock_info table is inplace
+
+    c = sql.connect(
+        '{}/stock_data/fin_data.db'.format(fm.storage_directory)).cursor()
+
+    table_lst = c.execute(
+        "SELECT name FROM sqlite_master WHERE type='table';")
+
+    table_lst = [i[0] for i in table_lst.fetchall()]
+
+    if "stock_info" not in table_lst:fm.stock_info_table()
+    c.close()
+
+
+    #initialize connection to MetaTrader5 terminal
+
+    if not mt5.initialize():
+        print("initialize() failed, error code =",mt5.last_error())
+        quit()
+
+    print('Ready for work')
+
+
+    #Update every asset
+
+    while True:
+        fm.update_init()
