@@ -2,6 +2,7 @@ import os
 import importlib
 import MetaTrader5 as mt5
 import pytz
+import datetime as dt
 from datetime import datetime
 import pandas as pd
 import sqlite3 as sql
@@ -84,6 +85,19 @@ class FileManager:
         conn.close()
 
 
+    def work_day(self):
+        #Return true if its working day, doesn`t account national holidays
+        weekDays = ("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+        weekDay = weekDays[datetime.date.today().weekday()]
+        today = datetime.date.today().strftime('%Y.%m.%d')
+        hour = datetime.datetime.now().hour
+        work_time = (9,19)
+        if weekDay in weekDays[-2:]:
+            return False
+        else:
+            return True
+
+
     def updateStamp(self,ticker):
 
         conn = self.connect_to_db()
@@ -107,25 +121,24 @@ class FileManager:
         frame = '1H'
         market = 'ФР МБ'
 
-        """
-        TimeFrame = [
-            TIMEFRAME_M1,
-         -> TIMEFRAME_H1,
-            TIMEFRAME_D1,
-            TIMEFRAME_W1,
-            TIMEFRAME_MON1
-        ]
-        """
-
-
         #Download scenario
         conn = self.connect_to_db()
 
         timezone = pytz.timezone("Etc/UTC")
 
-        ymd = datetime.today().strftime('%Y-%m-%d')
+        #ymd = datetime.today().strftime('%Y-%m-%d')
+        ymd = datetime.today()
+
+        if self.work_day:
+           delta = dt.timedelta(days = 1)
+           ymd = (ymd - delta).strftime('%Y-%m-%d')
+           print(ymd)
+        else:
+            ymd.strftime('%Y-%m-%d')
+
         ymd = [int(i) for i in ymd.split('-')]
         y,m,d = ymd[0],ymd[1],ymd[2]
+
         utc_from = datetime(y, m, d, tzinfo=timezone)
 
         rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_H1, utc_from, 50000)
@@ -146,3 +159,28 @@ class FileManager:
                       market, UpdateDate, UpdateHour))
         conn.commit()
         conn.close()
+
+
+    def update_stock(self):
+        querry = c.execute(
+            'SELECT * FROM GAZP ORDER BY time DESC LIMIT 1;').fetchall()[0][0]
+        querry = self.connect_to_db().fetchall()[0][0]
+        date = querry.split()[0].split('-')
+
+        timezone = pytz.timezone("Etc/UTC")
+
+        y,m,d = int(date[0]),int(date[1]),int(date[2])
+        start_hour = int(querry.split()[1].split(':')[0]) + 1
+        utc_from = datetime(y, m, d, hour = start_hour, tzinfo=timezone)
+
+        ymd = datetime.today().strftime('%Y-%m-%d')
+        ymd = [int(i) for i in ymd.split('-')]
+        y,m,d = ymd[0],ymd[1],ymd[2]
+        utc_to = datetime(y, m, d, hour = 23, tzinfo=timezone)
+
+        rates = mt5.copy_rates_range(asset, mt5.TIMEFRAME_H1, utc_from, utc_to)
+        rates_frame = pd.DataFrame(rates)
+        rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
+
+        rates_frame.to_sql(name=asset, con=conn, if_exists='append', index=False)
+        pass
