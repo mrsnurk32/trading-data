@@ -3,3 +3,6 @@ __pycache__/
 
 #stock_data
 stock_data/
+
+#Jupyter lab
+.ipynb_checkpoints/
