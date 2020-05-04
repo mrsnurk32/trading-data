@@ -7,6 +7,7 @@ from datetime import datetime
 import pandas as pd
 import sqlite3 as sql
 from sqlite3 import Error
+import time
 
 #Filemanger purpose is maintain all files directories
 #FileManager will also download, store and update Data
@@ -15,16 +16,19 @@ from sqlite3 import Error
 class FileManager:
 
     def __init__(self):
+
         self.storage_directory = os.getcwd().replace('\\','/')
         self.timezone = pytz.timezone("Etc/UTC")
 
 
     def default_path(self):
+
         print(os.getcwd())
         self.storage_directory = os.getcwd().replace('\\','/')
 
 
     def custom_path(self):
+
         self.storage_directory = input('Enter path')
 
 
@@ -50,6 +54,7 @@ class FileManager:
 
 
     def connect_to_db(self):
+
         db_file_path = '{}/stock_data/fin_data.db'.format(
             self.storage_directory)
 
@@ -106,13 +111,8 @@ class FileManager:
         c.execute("""INSERT INTO stock_info (
                   Ticker,Currency,Frame,Market,UpdateDate,UpDateHour)
                   VALUES({},{},{},{},{},{});
-                  """.format(
-                      ticker,
-                      currency,
-                      frame,
-                      market,
-                      UpdateDate,
-                      UpdateHour))
+                  """.format(ticker,currency,frame,
+                             market,UpdateDate,UpdateHour))
 
 
     def download_stock(self,ticker):
@@ -161,14 +161,13 @@ class FileManager:
 
 
     def update_stock(self, ticker):
+
         c = self.connect_to_db()
 
         querry = c.execute(
              'SELECT * FROM {} ORDER BY time DESC LIMIT 1;'.format(ticker)
              ).fetchall()[0][0]
-
-
-
+        date_ = querry.split()[0]
         date = querry.split()[0].split('-')
 
         timezone = pytz.timezone("Etc/UTC")
@@ -184,18 +183,60 @@ class FileManager:
         hour = datetime.now().hour - 1
         utc_to = datetime(y, m, d, hour = hour, tzinfo=timezone)
 
-        if start_hour > hour:return print('Up to date')
+        today_ = dt.datetime.today().strftime('%Y-%m-%d')
+
+        if start_hour > hour and date_ == today_:return 'Up to date'
 
         rates = mt5.copy_rates_range(ticker, mt5.TIMEFRAME_H1, utc_from, utc_to)
         rates_frame = pd.DataFrame(rates)
         rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
-
         rates_frame.to_sql(
             name=ticker, con=self.connect_to_db(),
             if_exists='append', index=False)
-        print(rates_frame)
+
         self.connect_to_db().commit()
         self.connect_to_db().close()
 
-        print(utc_from)
-        print(utc_to)
+        return "Updated"
+
+
+    def update(self):
+
+        c = self.connect_to_db().cursor()
+
+        table_lst = c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table';")
+        table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
+        print(table_lst)
+
+        hour = datetime.now().hour
+
+        for asset in table_lst:
+            self.update_stock(asset)
+            print("Updating {}, hour:{}".format(asset,hour))
+
+
+    def update_init(self):
+
+
+        update_time_lst = [i for i in range(10,19)]
+
+        hour = datetime.now().hour
+
+        if hour in update_time_lst:
+            self.update()
+
+
+
+        exhange_mins = 120 #Exchange timer is 2 min ahead
+        current_time = dt.datetime.now().time().strftime('%H:%M:%S').split(':')
+
+        h,m = int(current_time[0]),int(current_time[1])
+        s = int(current_time[2])
+
+        hour = hour + 1
+
+        time_left = dt.timedelta(
+            hours = hour) - dt.timedelta(hours = h,minutes = m,seconds = s)
+        time_left = time_left.total_seconds() + exhange_mins
+        time.sleep(time_left)

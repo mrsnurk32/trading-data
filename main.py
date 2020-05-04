@@ -49,12 +49,14 @@ print('Ready for work')
 
 #Asset update section
 
-table_lst = [i for i in table_lst if i != 'stock_info'] #Creates list of securities
+# table_lst = [i for i in table_lst if i != 'stock_info'] #Creates list of securities
+#
+# for asset in table_lst:
+#     fm.update_stock(asset)
+#fm.update()
+# while True:
+fm.update_init()
 
-for asset in table_lst:
-    fm.update_stock(asset)
 
 
-
-
-#fm.download_stock("YNDX")
+#fm.download_stock("GAZP")
