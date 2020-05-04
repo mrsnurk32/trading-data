@@ -138,7 +138,6 @@ class FileManager:
 
         ymd = [int(i) for i in ymd.split('-')]
         y,m,d = ymd[0],ymd[1],ymd[2]
-
         utc_from = datetime(y, m, d, tzinfo=timezone)
 
         rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_H1, utc_from, 50000)
@@ -161,10 +160,15 @@ class FileManager:
         conn.close()
 
 
-    def update_stock(self):
+    def update_stock(self, ticker):
+        c = self.connect_to_db()
+
         querry = c.execute(
-            'SELECT * FROM GAZP ORDER BY time DESC LIMIT 1;').fetchall()[0][0]
-        querry = self.connect_to_db().fetchall()[0][0]
+             'SELECT * FROM {} ORDER BY time DESC LIMIT 1;'.format(ticker)
+             ).fetchall()[0][0]
+
+
+
         date = querry.split()[0].split('-')
 
         timezone = pytz.timezone("Etc/UTC")
@@ -176,11 +180,22 @@ class FileManager:
         ymd = datetime.today().strftime('%Y-%m-%d')
         ymd = [int(i) for i in ymd.split('-')]
         y,m,d = ymd[0],ymd[1],ymd[2]
-        utc_to = datetime(y, m, d, hour = 23, tzinfo=timezone)
 
-        rates = mt5.copy_rates_range(asset, mt5.TIMEFRAME_H1, utc_from, utc_to)
+        hour = datetime.now().hour - 1
+        utc_to = datetime(y, m, d, hour = hour, tzinfo=timezone)
+
+        if start_hour > hour:return print('Up to date')
+
+        rates = mt5.copy_rates_range(ticker, mt5.TIMEFRAME_H1, utc_from, utc_to)
         rates_frame = pd.DataFrame(rates)
         rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
 
-        rates_frame.to_sql(name=asset, con=conn, if_exists='append', index=False)
-        pass
+        rates_frame.to_sql(
+            name=ticker, con=self.connect_to_db(),
+            if_exists='append', index=False)
+        print(rates_frame)
+        self.connect_to_db().commit()
+        self.connect_to_db().close()
+
+        print(utc_from)
+        print(utc_to)
