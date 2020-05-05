@@ -219,7 +219,7 @@ class FileManager:
     def update_init(self):
 
 
-        update_time_lst = [i for i in range(10,19)]
+        update_time_lst = [i for i in range(10,20)]
 
         hour = datetime.now().hour
 
