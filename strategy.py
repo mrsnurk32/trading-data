@@ -35,7 +35,7 @@ def get_stock_df(ticker,conn,simple = True):
         return df
 
 
-def get_stock_data(ticker, conn):
+def get_stock_statistics(ticker, conn):
 
     pass
 
