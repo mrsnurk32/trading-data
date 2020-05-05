@@ -35,10 +35,25 @@ def get_stock_df(ticker,conn,simple = True):
         return df
 
 
-def get_stock_statistics(ticker, conn):
+def get_stock_statistics(df):
 
-    pass
+    ma10 = np.mean(df.close.tail(10))
+    ma100 = np.mean(df.close.tail(100))
+
+    std8 = np.std(df.close.tail(8))
+    std13 = np.std(df.close.tail(13))
+    std21 = np.std(df.close.tail(21))
+
+    return {
+        'MA10':ma10,
+        'MA100':ma100,
+        'DiffMA':(ma10/ma100)-1,
+        'std8':std8,
+        'std13':std13,
+        'std21':std21
+    }
+
 
 conn = connect_to_db()
 df = get_stock_df('YNDX',conn)
-print(df.head())
+print(get_stock_statistics(df))
