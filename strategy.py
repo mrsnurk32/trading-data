@@ -4,14 +4,14 @@ import sqlite3 as sql
 import matplotlib.pyplot as plt
 
 
-#1st stage connect to db and return latest statistics
+
 class Analyzer:
 
     def __init__(self):
         pass
 
 
-    def connect_to_db():
+    def connect_to_db(self):
 
         db_file_path = 'stock_data/fin_data.db'.format()
 
@@ -27,7 +27,7 @@ class Analyzer:
                 sqlite3_conn.close()
 
 
-    def get_stock_df(ticker,conn,simple = True):
+    def get_stock_df(self,ticker,conn,simple = True):
             #Returns pandas df
             querry = "SELECT * from {}".format(ticker)
             df = pd.read_sql_query(querry, conn)
@@ -40,7 +40,7 @@ class Analyzer:
             return df
 
 
-    def get_stock_statistics(df):
+    def get_stock_statistics(self,df):
 
         #Function returns dict with parameters for trading decision
         ma10 = np.mean(df.close.tail(10))
@@ -60,7 +60,7 @@ class Analyzer:
         }
 
 
-    def ret_in_n_hour(df):
+    def ret_in_n_hour(self,df):
         #Creates df with future returns
         df = df[['time','close']].copy()
         df['Returns'] = df.close.pct_change()
@@ -69,7 +69,7 @@ class Analyzer:
 
         temp = pd.DataFrame()
 
-        for i in range(1,10):
+        for i in range(1,5):
             col = 'ret_in_{}h'.format(i)
             if i == 1:
                 df[col]=df.Returns.iloc[i:].reset_index(drop=True)
@@ -80,12 +80,13 @@ class Analyzer:
         return df
 
 
-    def return_over_period(df, period=10):
+    def return_over_period(self,df, period=20):
+        df['Returns'] = df.close.pct_change()
         #the function returns cumulative income over (n) amount of past periods
-        period = 10
+        period = period
         per_name = 'h'
         df = df[['time','close','Returns']].copy()
-
+        df.Returns = df.Returns + 1
         vals = list(df.Returns.values)
 
         vals = [i for i in vals if str(i) != 'nan']
@@ -108,8 +109,8 @@ class Analyzer:
 
             result_lst.append(prev_val)
 
-        for i in range(period):result_lst.insert(0,'nan')
+        for i in range(period):result_lst.insert(0,None)
 
         col = '{}{}_ret'.format(period,per_name)
-        df['2d_ret'] = result_lst
+        df[col] = result_lst
         return df
