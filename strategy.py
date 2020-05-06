@@ -74,6 +74,39 @@ def ret_in_n_hour(df):
 
     return df
 
-conn = connect_to_db()
-df = get_stock_df('YNDX',conn)
-print(get_stock_statistics(df))
+
+def return_over_period(df, period=10):
+    #the function returns cumulative income over (n) amount of past periods
+    period = 10
+    per_name = 'h'
+    df = df[['time','close','Returns']].copy()
+
+    vals = list(df.Returns.values)
+
+    vals = [i for i in vals if str(i) != 'nan']
+
+    result_lst = list()
+
+    #list one line shorter than df
+
+    for i in range(len(vals)+1):
+
+        if i < period:continue
+        lst = vals[i-period:i]
+        prev_val = None
+        for j in lst:
+            if prev_val == None:
+                prev_val = j
+                continue
+            else:
+                prev_val = j * prev_val
+
+        result_lst.append(prev_val)
+
+    for i in range(period):result_lst.insert(0,'nan')
+
+    col = '{}{}_ret'.format(period,per_name)
+    df['2d_ret'] = result_lst
+    return df
+
+        
