@@ -23,7 +23,7 @@ def connect_to_db():
 
 
 def get_stock_df(ticker,conn,simple = True):
-
+        #Returns pandas df
         querry = "SELECT * from {}".format(ticker)
         df = pd.read_sql_query(querry, conn)
 
@@ -37,6 +37,7 @@ def get_stock_df(ticker,conn,simple = True):
 
 def get_stock_statistics(df):
 
+    #Function returns dict with parameters for trading decision
     ma10 = np.mean(df.close.tail(10))
     ma100 = np.mean(df.close.tail(100))
 
@@ -53,6 +54,25 @@ def get_stock_statistics(df):
         'std21':std21
     }
 
+
+def ret_in_n_hour(df):
+    #Creates df with future returns
+    df = df[['time','close']].copy()
+    df['Returns'] = df.close.pct_change()
+
+    df.Returns = df.Returns + 1
+
+    temp = pd.DataFrame()
+
+    for i in range(1,10):
+        col = 'ret_in_{}h'.format(i)
+        if i == 1:
+            df[col]=df.Returns.iloc[i:].reset_index(drop=True)
+        else:
+            prev = 'ret_in_{}h'.format(i-1)
+            df[col] = df[prev] * df.Returns.iloc[i:].reset_index(drop=True)
+
+    return df
 
 conn = connect_to_db()
 df = get_stock_df('YNDX',conn)
