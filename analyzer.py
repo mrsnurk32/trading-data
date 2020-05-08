@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sqlite3 as sql
 import matplotlib.pyplot as plt
+import time
 
 
 #This class will be incharge of gatharing analytical data for strategy class
@@ -13,7 +14,7 @@ import matplotlib.pyplot as plt
 # 3. Provides data from financial report (under development)
 class Analyzer:
 
-    def __init__(self):
+    def __init__(self,capital):
         self._capital = capital
         self._compound_return = None
 
@@ -34,7 +35,7 @@ class Analyzer:
                 sqlite3_conn.close()
 
 
-    def get_stock_df(self,ticker,conn,simple = True):
+    def get_stock_df(self, ticker,conn,simple = True):
             #Returns pandas df
             querry = "SELECT * from {}".format(ticker)
             df = pd.read_sql_query(querry, conn)
@@ -47,7 +48,7 @@ class Analyzer:
             return df
 
 
-    def get_stock_statistics(self,df):
+    def get_stock_statistics(self, df):
 
         #Function returns dict with parameters for trading decision
         ma10 = np.mean(df.close.tail(10))
@@ -67,8 +68,9 @@ class Analyzer:
         }
 
 
-    def ret_in_n_hour(self,df):
+    def ret_in_n_hour(self, df, period=None):
         #Creates df with future returns
+
         df = df[['time','close']].copy()
         df['Returns'] = df.close.pct_change()
 
@@ -76,7 +78,9 @@ class Analyzer:
 
         temp = pd.DataFrame()
 
-        for i in range(1,5):
+        period += 1 if period is not None else 4
+
+        for i in range(1,period):
             col = 'ret_in_{}h'.format(i)
             if i == 1:
                 df[col]=df.Returns.iloc[i:].reset_index(drop=True)
@@ -87,7 +91,7 @@ class Analyzer:
         return df
 
 
-    def return_over_period(self,df, period=20):
+    def return_over_period(self, df, period=20):
         df['Returns'] = df.close.pct_change()
         #the function returns cumulative income over (n) amount of past periods
         period = period
@@ -122,15 +126,35 @@ class Analyzer:
         df[col] = result_lst
         return df
 
-    @staticmethod
-    def get_moving_average(df,**kwargs):
+
+    #Moving average section
+
+
+    def get_moving_average(self, df, *args):
 
         col = 'close'
 
-        for k,v in kwargs.items():
-            column_name = '{}{}'.format(k,v)
-            df[column_name] = df.close.rolling(v).mean()
+        for ma in args:
+            column_name = 'MA{}'.format(ma)
+            df[column_name] = df.close.rolling(ma).mean()
 
         return df
 
-a = Analyzer()
+
+    def alligator(self, df):
+        return self.get_moving_average(df,5,8,13)
+
+
+if __name__ == '__main__':
+    #default combination of analytic data
+    t1 = time.time()
+    a = Analyzer(2000)
+    conn = a.connect_to_db()
+    df = a.get_stock_df('YNDX',conn)
+    alligator_df = a.alligator(df)
+    t2 = time.time()
+
+    result = t1 - t2
+    print(result)
+else:
+    pass
