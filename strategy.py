@@ -114,3 +114,16 @@ class Analyzer:
         col = '{}{}_ret'.format(period,per_name)
         df[col] = result_lst
         return df
+
+    @staticmethod
+    def get_moving_average(df,**kwargs):
+
+        col = 'close'
+
+        for k,v in kwargs.items():
+            column_name = '{}{}'.format(k,v)
+            df[column_name] = df.close.rolling(v).mean()
+
+        return df
+
+a = Analyzer()
