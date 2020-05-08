@@ -4,7 +4,13 @@ import sqlite3 as sql
 import matplotlib.pyplot as plt
 
 
+#This class will be incharge of gatharing analytical data for strategy class
 
+# 1. Provides current statistics for trading desicion
+
+# 2. Provides moving data like MA (under development)
+
+# 3. Provides data from financial report (under development)
 class Analyzer:
 
     def __init__(self):
