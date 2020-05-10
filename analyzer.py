@@ -19,6 +19,21 @@ class Analyzer:
         self._compound_return = None
 
 
+    @staticmethod
+    def create_class(capital):
+
+        var = Analyzer(capital)
+        conn = var.connect_to_db()
+        df = var.get_stock_df('YNDX',conn)
+        alligator_df = var.alligator(df)
+        df = var.get_moving_average(alligator_df,50,100)
+        df = var.standard_deviation(df,50,100)
+        df = var.returns(df)
+        df = var.ret_in_n_hour(df)
+
+        return df
+
+
     def connect_to_db(self):
 
         db_file_path = 'stock_data/fin_data.db'.format()
@@ -68,25 +83,35 @@ class Analyzer:
         }
 
 
-    def ret_in_n_hour(self, df, period=None):
+    def returns(self,df):
+        df['Returns'] = df.close.pct_change()
+        df.Returns = df.Returns + 1
+        return df
+
+
+    def ret_in_n_hour(self, df, period=4):
         #Creates df with future returns
 
-        df = df[['time','close']].copy()
-        df['Returns'] = df.close.pct_change()
+        #df['Returns'] = df.close.pct_change()
 
-        df.Returns = df.Returns + 1
+        if 'Returns' not in df.columns:df = self.returns(df)
+        temp = df[['time','close','Returns']].copy()
 
-        temp = pd.DataFrame()
 
-        period += 1 if period is not None else 4
+        period += 1
 
         for i in range(1,period):
             col = 'ret_in_{}h'.format(i)
             if i == 1:
-                df[col]=df.Returns.iloc[i:].reset_index(drop=True)
+                temp[col] = temp.Returns.iloc[i:].reset_index(drop=True)
             else:
                 prev = 'ret_in_{}h'.format(i-1)
-                df[col] = df[prev] * df.Returns.iloc[i:].reset_index(drop=True)
+                temp[col] = temp[prev] * temp.Returns.iloc[i:].reset_index(drop=True)
+
+        for i in ['time','close','Returns']:
+            del temp[i]
+
+        df = pd.concat([df, temp], axis=1)
 
         return df
 
@@ -96,7 +121,7 @@ class Analyzer:
         #the function returns cumulative income over (n) amount of past periods
         period = period
         per_name = 'h'
-        df = df[['time','close','Returns']].copy()
+        #df = df[['time','close','Returns']].copy()
         df.Returns = df.Returns + 1
         vals = list(df.Returns.values)
 
@@ -127,6 +152,7 @@ class Analyzer:
         return df
 
 
+    #Moving metrics
     #Moving average section
 
 
@@ -145,16 +171,36 @@ class Analyzer:
         return self.get_moving_average(df,5,8,13)
 
 
+    #Standard deviation section
+
+    def standard_deviation(self,df,*args):
+
+        col = 'close'
+
+        temp = pd.DataFrame()
+        temp['Return'] = df.close.pct_change()
+
+        for std in args:
+            column_name = 'STD{}'.format(std)
+            df[column_name] = temp.Return.rolling(std).std()
+
+        return df
+
+    #Current metrics
+
+    def current_stats(self):
+        pass
+
+
 if __name__ == '__main__':
     #default combination of analytic data
     t1 = time.time()
-    a = Analyzer(2000)
-    conn = a.connect_to_db()
-    df = a.get_stock_df('YNDX',conn)
-    alligator_df = a.alligator(df)
+    frame = Analyzer.create_class(20000)
     t2 = time.time()
 
     result = t1 - t2
-    print(result)
+    print(frame.head(10))
+
+    print(frame.columns)
 else:
     pass
