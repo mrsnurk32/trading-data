@@ -30,6 +30,7 @@ class Analyzer:
         df = var.standard_deviation(df,50,100)
         df = var.returns(df)
         df = var.ret_in_n_hour(df)
+        df = var.return_over_period(df)
 
         return df
 
@@ -83,9 +84,9 @@ class Analyzer:
         }
 
 
-    def returns(self,df):
+    def returns(self,df,increment = True):
         df['Returns'] = df.close.pct_change()
-        df.Returns = df.Returns + 1
+        if increment:df.Returns = df.Returns + 1
         return df
 
 
@@ -116,13 +117,12 @@ class Analyzer:
         return df
 
 
-    def return_over_period(self, df, period=20):
-        df['Returns'] = df.close.pct_change()
-        #the function returns cumulative income over (n) amount of past periods
+    def return_over_period(self, df, period=2):
+        if 'Returns' not in df.columns:df = self.returns(df)
+        #the function returns income over (n) amount of past periods
         period = period
         per_name = 'h'
-        #df = df[['time','close','Returns']].copy()
-        df.Returns = df.Returns + 1
+
         vals = list(df.Returns.values)
 
         vals = [i for i in vals if str(i) != 'nan']
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     t2 = time.time()
 
     result = t1 - t2
-    print(frame.head(10))
+    print(frame.head(55))
 
     print(frame.columns)
 else:
