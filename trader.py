@@ -1,9 +1,17 @@
-#Trader class accounts trading activity
+# Trader alpha 1.2
+#
+# Trader class accounts trading activity
 # - Balance sheet report
 # - Buy request
 # - Sell request
 # - Portfolio evaluation
 # - Efficiency evaluation
+
+import pandas as pd
+import numpy as np
+from file_manager import FileManager as fm
+import os
+fm.initialize()
 
 class Trader:
 
@@ -12,7 +20,7 @@ class Trader:
                    'buy_price','buy_amount',
                    'sell_price','sell_amount'])
 
-    def __init__(self, risk, return_,):
+    def __init__(self, risk=None, return_=None):
         self._balance = 0
         self._assets = 0
         self._risk = risk
@@ -39,12 +47,8 @@ class Trader:
         #Purchase data
         self.balance = -(amount * price)
         data = dict(
-            time = time,
-            ticker = ticker,
-            buy_price = price,
-            buy_amount = amount,
-            sell_price = np.nan,
-            sell_amount = np.nan
+            time = time, ticker = ticker, buy_price = price,
+            buy_amount = amount, sell_price = np.nan, sell_amount = np.nan
         )
 
         self.TRADING_DATA = self.TRADING_DATA.append(data,ignore_index=True)
@@ -58,12 +62,8 @@ class Trader:
 
         self.balance = (amount * price)
         data = dict(
-            time = time,
-            ticker = ticker,
-            buy_price = np.nan,
-            buy_amount = np.nan,
-            sell_price = price,
-            sell_amount = amount
+            time = time, ticker = ticker, buy_price = np.nan,
+            buy_amount = np.nan, sell_price = price, sell_amount = amount
         )
 
         self.TRADING_DATA = self.TRADING_DATA.append(data,ignore_index=True)
@@ -90,3 +90,16 @@ class Trader:
             assets += self.remaining_assets(asset,True)
 
         return assets + self.balance
+
+    def get_last_price(self,ticker):
+        return fm.get_last_price(ticker)
+
+
+    @property
+    def net_income(self):
+        data = self.TRADING_DATA
+        purchases = (data.buy_price * data.buy_amount).sum()
+        sales = (data.sell_price * data.sell_amount).sum()
+        report = self.total - (self.total + (purchases-sales))
+
+        return report
