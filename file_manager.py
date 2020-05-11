@@ -241,6 +241,34 @@ class FileManager:
         time_left = time_left.total_seconds() + exhange_mins
         time.sleep(time_left)
 
+    @staticmethod
+    def get_last_price(ticker):
+        timezone = pytz.timezone("Etc/UTC")
+        ymd = datetime.today()
+
+        if FileManager.work_day:
+           delta = dt.timedelta(days = 1)
+           ymd = (ymd - delta).strftime('%Y-%m-%d')
+           print(ymd)
+        else:
+            ymd.strftime('%Y-%m-%d')
+
+        ymd = [int(i) for i in ymd.split('-')]
+        y,m,d = ymd[0],ymd[1],ymd[2]
+        utc_from = datetime(y, m, d, tzinfo=timezone)
+        rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_H1, utc_from, 1)
+        rates_frame = pd.DataFrame(rates)
+        rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
+        return list(rates_frame.close.values)[0]
+
+
+    @staticmethod
+    def initialize():
+        if not mt5.initialize():
+            print("initialize() failed, error code =",mt5.last_error())
+            quit()
+
+
 
 if __name__ == "__main__":
 
