@@ -104,10 +104,10 @@ class Analyzer:
         for i in range(1,period):
             col = 'ret_in_{}h'.format(i)
             if i == 1:
-                temp[col] = temp.Returns.iloc[i:].reset_index(drop=True)
+                temp[col] = temp.Returns.shift(-i)
             else:
                 prev = 'ret_in_{}h'.format(i-1)
-                temp[col] = temp[prev] * temp.Returns.iloc[i:].reset_index(drop=True)
+                temp[col] = temp[prev] * temp.Returns.shift(-i)
 
         for i in ['time','close','Returns']:
             del temp[i]
