@@ -201,12 +201,7 @@ class Analyzer:
 
 
 if __name__ == '__main__':
-    #default combination of analytic data
-    t1 = time.time()
-    frame = Analyzer.create_class(20000)
-    t2 = time.time()
-
-    result = t1 - t2
-    print(frame)
-else:
     pass
+else:
+    #default combination of analytic data
+    frame = Analyzer.create_class(20000)
