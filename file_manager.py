@@ -249,7 +249,6 @@ class FileManager:
         if FileManager.work_day:
            delta = dt.timedelta(days = 1)
            ymd = (ymd - delta).strftime('%Y-%m-%d')
-           print(ymd)
         else:
             ymd.strftime('%Y-%m-%d')
 
