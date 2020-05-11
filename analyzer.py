@@ -21,7 +21,7 @@ class Analyzer:
 
     @staticmethod
     def create_class(capital):
-
+        fib_sequence = [1,2,3,5,8]
         var = Analyzer(capital)
         conn = var.connect_to_db()
         df = var.get_stock_df('YNDX',conn)
@@ -30,8 +30,9 @@ class Analyzer:
         df = var.standard_deviation(df,50,100)
         df = var.returns(df)
         df = var.ret_in_n_hour(df)
-        df = var.return_over_period(df)
 
+        for i in fib_sequence:
+            df = var.return_over_period(df,i)
         return df
 
 
@@ -206,6 +207,6 @@ if __name__ == '__main__':
     t2 = time.time()
 
     result = t1 - t2
-    print(result)
+    print(frame)
 else:
     pass
