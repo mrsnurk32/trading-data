@@ -171,6 +171,13 @@ class Analyzer:
         return self.get_moving_average(df,5,8,13)
 
 
+    def bollinger_bands(self):
+        pass
+
+
+    def rsi(self):
+        pass
+
     #Standard deviation section
 
     def standard_deviation(self,df,*args):
@@ -199,8 +206,6 @@ if __name__ == '__main__':
     t2 = time.time()
 
     result = t1 - t2
-    print(frame.head(55))
-
-    print(frame.columns)
+    print(result)
 else:
     pass
