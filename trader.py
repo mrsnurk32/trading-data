@@ -1,4 +1,4 @@
-# Trader alpha 1.2
+# Trader alpha 1.2.2
 #
 # Trader class accounts trading activity
 # - Balance sheet report
@@ -37,6 +37,10 @@ class Trader:
         self._balance += value
         return self._balance
 
+    @property
+    def balance_sheet(self):
+        return self.TRADING_DATA
+
 
     def buy(self,time,price,amount,ticker):
         #if not self.flag:return 'Bot is active'
@@ -53,7 +57,7 @@ class Trader:
 
         self.TRADING_DATA = self.TRADING_DATA.append(data,ignore_index=True)
         self.flag = False
-        return self.TRADING_DATA
+        #return self.TRADING_DATA
 
     def sell(self,time,price,amount,ticker):
 
@@ -68,7 +72,7 @@ class Trader:
 
         self.TRADING_DATA = self.TRADING_DATA.append(data,ignore_index=True)
         self.flag = True
-        return self.TRADING_DATA
+        #return self.TRADING_DATA
 
 
     def remaining_assets(self,ticker,asset_value=False):
@@ -76,7 +80,7 @@ class Trader:
         data = data[data.ticker == ticker]
 
         report = data.buy_amount.sum() - data.sell_amount.sum()
-        report = report if asset_value == None else (
+        report = report if asset_value == False else (
             report * fm.get_last_price(ticker))
 
         return report
