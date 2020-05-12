@@ -8,7 +8,7 @@ import pandas as pd
 import sqlite3 as sql
 from sqlite3 import Error
 import time
-
+#v. alpha 1.2.1
 #Filemanger purpose is maintain all files directories
 #FileManager will also download, store and update Data
 
@@ -243,19 +243,14 @@ class FileManager:
 
     @staticmethod
     def get_last_price(ticker):
+
         timezone = pytz.timezone("Etc/UTC")
         ymd = datetime.today()
-
-        if FileManager.work_day:
-           delta = dt.timedelta(days = 1)
-           ymd = (ymd - delta).strftime('%Y-%m-%d')
-        else:
-            ymd.strftime('%Y-%m-%d')
-
+        ymd = (ymd + dt.timedelta(days = 1)).strftime('%Y-%m-%d')
         ymd = [int(i) for i in ymd.split('-')]
         y,m,d = ymd[0],ymd[1],ymd[2]
         utc_from = datetime(y, m, d, tzinfo=timezone)
-        rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_H1, utc_from, 1)
+        rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_M1, utc_from, 1)
         rates_frame = pd.DataFrame(rates)
         rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
         return list(rates_frame.close.values)[0]
