@@ -12,30 +12,26 @@ import time
 # 2. Provides moving data like MA (under development)
 
 # 3. Provides data from financial report (under development)
-class Analyzer:
+class Metrics:
 
-    def __init__(self,capital):
-        self._capital = capital
-        self._compound_return = None
+    def __init__(self):
+        pass
 
 
     @staticmethod
-    def create_class(capital):
-        fib_sequence = [1,2,3,5,8]
-        var = Analyzer(capital)
-        conn = var.connect_to_db()
-        df = var.get_stock_df('YNDX',conn)
-        alligator_df = var.alligator(df)
-        df = var.get_moving_average(alligator_df,50,100)
-        df = var.standard_deviation(df,50,100)
+    def get_frame(ticker):
+
+        conn = Metrics.connect_to_db()
+        df = Metrics.get_stock_df(ticker,conn)
+
         df = var.returns(df)
         df = var.ret_in_n_hour(df)
 
-        for i in fib_sequence:
-            df = var.return_over_period(df,i)
         return df
 
 
+
+    #This part transforms data from sql to pandas dataframe
     def connect_to_db(self):
 
         db_file_path = 'stock_data/fin_data.db'.format()
@@ -64,27 +60,7 @@ class Analyzer:
 
             return df
 
-
-    def get_stock_statistics(self, df):
-
-        #Function returns dict with parameters for trading decision
-        ma10 = np.mean(df.close.tail(10))
-        ma100 = np.mean(df.close.tail(100))
-
-        std8 = np.std(df.close.tail(8))
-        std13 = np.std(df.close.tail(13))
-        std21 = np.std(df.close.tail(21))
-
-        return {
-            'MA10':ma10,
-            'MA100':ma100,
-            'DiffMA':(ma10/ma100)-1,
-            'std8':std8,
-            'std13':std13,
-            'std21':std21
-        }
-
-
+    #The following part retrieves data from future and past periods
     def returns(self,df,increment = True):
         df['Returns'] = df.close.pct_change()
         if increment:df.Returns = df.Returns + 1
@@ -157,40 +133,17 @@ class Analyzer:
     #Moving average section
 
 
-    def get_moving_average(self, df, *args):
+    def get_moving_average(self, df, period):
 
-        col = 'close'
-
-        for ma in args:
-            column_name = 'MA{}'.format(ma)
-            df[column_name] = df.close.rolling(ma).mean()
-
+        df['MA{}'.format(ma)] = df.close.rolling(ma).mean()
         return df
-
-
-    def alligator(self, df):
-        return self.get_moving_average(df,5,8,13)
-
-
-    def bollinger_bands(self):
-        pass
-
-
-    def rsi(self):
-        pass
 
     #Standard deviation section
 
-    def standard_deviation(self,df,*args):
+    def standard_deviation(self,df,period):
 
-        col = 'close'
-
-        temp = pd.DataFrame()
-        temp['Return'] = df.close.pct_change()
-
-        for std in args:
-            column_name = 'STD{}'.format(std)
-            df[column_name] = temp.Return.rolling(std).std()
+        if 'Returns' not in df.columns:df = self.returns(df)
+        df['STD{}'.format(std)] = temp.Return.rolling(std).std()
 
         return df
 
@@ -203,5 +156,6 @@ class Analyzer:
 if __name__ == '__main__':
     pass
 else:
+    pass
     #default combination of analytic data
-    frame = Analyzer.create_class(20000)
+#     frame = Analyzer.create_class(20000)
