@@ -1,4 +1,4 @@
-# Trader alpha 1.2.2
+# Trader alpha 1.2.3
 #
 # Trader class accounts trading activity
 # - Balance sheet report
@@ -46,7 +46,7 @@ class Trader:
         #if not self.flag:return 'Bot is active'
 
         #Check if enough money to buy asset
-        if self.balance - price * amount < 0:return 'Not enough credits'
+        if self.balance - price * amount <= 0:return 'Not enough credits'
 
         #Purchase data
         self.balance = -(amount * price)
