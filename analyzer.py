@@ -19,13 +19,19 @@ class Metrics:
 
 
     @staticmethod
-    def get_frame(ticker):
+    def get_frame(ticker,simple = False):
 
         conn = Metrics.connect_to_db()
         df = Metrics.get_stock_df(ticker,conn)
 
-        df = Metrics.returns(df)
-        df = Metrics.ret_in_n_hour(df)
+        if simple is False:
+            df = Metrics.returns(df)
+            df = Metrics.ret_in_n_hour(df)
+
+            period_sequence = [1,2,3,5,8,13,100]
+
+            for period in period_sequence:
+                df = Metrics.return_over_period(df,period)
 
         return df
 
