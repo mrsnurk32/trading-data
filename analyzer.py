@@ -24,15 +24,16 @@ class Metrics:
         conn = Metrics.connect_to_db()
         df = Metrics.get_stock_df(ticker,conn)
 
-        df = var.returns(df)
-        df = var.ret_in_n_hour(df)
+        df = Metrics.returns(df)
+        df = Metrics.ret_in_n_hour(df)
 
         return df
 
 
 
     #This part transforms data from sql to pandas dataframe
-    def connect_to_db(self):
+    @staticmethod
+    def connect_to_db():
 
         db_file_path = 'stock_data/fin_data.db'.format()
 
@@ -47,8 +48,8 @@ class Metrics:
             if sqlite3_conn is not None:
                 sqlite3_conn.close()
 
-
-    def get_stock_df(self, ticker,conn,simple = True):
+    @staticmethod
+    def get_stock_df(ticker,conn,simple = True):
             #Returns pandas df
             querry = "SELECT * from {}".format(ticker)
             df = pd.read_sql_query(querry, conn)
@@ -61,13 +62,14 @@ class Metrics:
             return df
 
     #The following part retrieves data from future and past periods
-    def returns(self,df,increment = True):
+    @staticmethod
+    def returns(df,increment = True):
         df['Returns'] = df.close.pct_change()
         if increment:df.Returns = df.Returns + 1
         return df
 
-
-    def ret_in_n_hour(self, df, period=4):
+    @staticmethod
+    def ret_in_n_hour(df, period=4):
         #Creates df with future returns
 
         #df['Returns'] = df.close.pct_change()
@@ -93,8 +95,8 @@ class Metrics:
 
         return df
 
-
-    def return_over_period(self, df, period=2):
+    @staticmethod
+    def return_over_period(df, period=2):
         if 'Returns' not in df.columns:df = self.returns(df)
         #the function returns income over (n) amount of past periods
         period = period
@@ -132,15 +134,15 @@ class Metrics:
     #Moving metrics
     #Moving average section
 
-
-    def get_moving_average(self, df, period):
+    @staticmethod
+    def get_moving_average(df, period):
 
         df['MA{}'.format(ma)] = df.close.rolling(ma).mean()
         return df
 
     #Standard deviation section
-
-    def standard_deviation(self,df,period):
+    @staticmethod
+    def standard_deviation(df,period):
 
         if 'Returns' not in df.columns:df = self.returns(df)
         df['STD{}'.format(std)] = temp.Return.rolling(std).std()
