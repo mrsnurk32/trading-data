@@ -3,6 +3,7 @@ import numpy as np
 import sqlite3 as sql
 import matplotlib.pyplot as plt
 import time
+from functools import reduce
 
 
 #This class will be incharge of gatharing analytical data for strategy class
@@ -105,35 +106,14 @@ class Metrics:
     def return_over_period(df, period=2):
         if 'Returns' not in df.columns:df = self.returns(df)
         #the function returns income over (n) amount of past periods
-        period = period
-        per_name = 'h'
 
-        vals = list(df.Returns.values)
+        arr = df.Returns.values
 
-        vals = [i for i in vals if str(i) != 'nan']
+        result = [v2 / v1 for v1,v2 in zip(arr,arr[period:])]
 
-        result_lst = list()
-
-        #list one line shorter than df
-
-        for i in range(len(vals)+1):
-
-            if i < period:continue
-            lst = vals[i-period:i]
-            prev_val = None
-            for j in lst:
-                if prev_val == None:
-                    prev_val = j
-                    continue
-                else:
-                    prev_val = j * prev_val
-
-            result_lst.append(prev_val)
-
-        for i in range(period):result_lst.insert(0,None)
-
-        col = '{}{}_ret'.format(period,per_name)
-        df[col] = result_lst
+        for i in range(period):result.insert(0,None)
+        df['h{}_ret'.format(period)] = result
+        
         return df
 
 
@@ -159,11 +139,3 @@ class Metrics:
 
     def current_stats(self):
         pass
-
-
-if __name__ == '__main__':
-    pass
-else:
-    pass
-    #default combination of analytic data
-#     frame = Analyzer.create_class(20000)
