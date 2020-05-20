@@ -1,4 +1,4 @@
-# Trader alpha 1.2.3
+# Trader alpha 1.2.4
 #
 # Trader class accounts trading activity
 # - Balance sheet report
@@ -15,10 +15,9 @@ fm.initialize()
 
 class Trader:
 
-    TRADING_DATA = pd.DataFrame(
-        columns = ['time','ticker',
-                   'buy_price','buy_amount',
-                   'sell_price','sell_amount'])
+    TRADING_DATA = []
+
+    AMOUNT = None
 
     def __init__(self, risk=None, return_=None):
         self._balance = 0
@@ -26,7 +25,6 @@ class Trader:
         self._risk = risk
         self._return = return_
         self._max_duration = 4
-        self.flag = True
 
     @property
     def balance(self):
@@ -39,30 +37,28 @@ class Trader:
 
     @property
     def balance_sheet(self):
-        return self.TRADING_DATA
+        return pd.DataFrame(self.TRADING_DATA)
 
 
     def buy(self,time,price,amount,ticker):
-        #if not self.flag:return 'Bot is active'
 
-        #Check if enough money to buy asset
-        if self.balance - price * amount <= 0:return 'Not enough credits'
+        if self.balance - price * amount < 0:return 'Not enough credits'
 
         #Purchase data
-        self.balance = -(amount * price)
+        self.balance = (-amount * price)
         data = dict(
             time = time, ticker = ticker, buy_price = price,
             buy_amount = amount, sell_price = np.nan, sell_amount = np.nan
         )
 
-        self.TRADING_DATA = self.TRADING_DATA.append(data,ignore_index=True)
-        self.flag = False
-        #return self.TRADING_DATA
+        self.TRADING_DATA.append(data)
+        self.AMOUNT = amount
+
 
     def sell(self,time,price,amount,ticker):
 
-        if self.remaining_assets(ticker) - amount < 0:
-            return 'Don`t have enough assets'
+        if self.AMOUNT - amount < 0:return 'Not enough assets'
+
 
         self.balance = (amount * price)
         data = dict(
@@ -70,13 +66,16 @@ class Trader:
             buy_amount = np.nan, sell_price = price, sell_amount = amount
         )
 
-        self.TRADING_DATA = self.TRADING_DATA.append(data,ignore_index=True)
-        self.flag = True
-        #return self.TRADING_DATA
+        self.TRADING_DATA.append(data)
+
 
 
     def remaining_assets(self,ticker,asset_value=False):
-        data = self.TRADING_DATA
+        data = pd.DataFrame(self.TRADING_DATA)
+
+
+        #data = pd.DataFrame(data,columns = self.COLUMNS)
+
         data = data[data.ticker == ticker]
 
         report = data.buy_amount.sum() - data.sell_amount.sum()
@@ -87,9 +86,9 @@ class Trader:
 
     @property
     def total(self):
-
+        data = pd.DataFrame(self.TRADING_DATA)
         assets = 0
-        tickers = list(self.TRADING_DATA.ticker.unique())
+        tickers = list(data.ticker.unique())
         for asset in tickers:
             assets += self.remaining_assets(asset,True)
 
