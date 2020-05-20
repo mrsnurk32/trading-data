@@ -29,7 +29,7 @@ class Metrics:
             df = Metrics.returns(df)
             df = Metrics.ret_in_n_hour(df)
 
-            period_sequence = [1,2,3,5,8,13,100]
+            period_sequence = [8,100]
 
             for period in period_sequence:
                 df = Metrics.return_over_period(df,period)
@@ -77,43 +77,24 @@ class Metrics:
 
     @staticmethod
     def ret_in_n_hour(df, period=4):
-        #Creates df with future returns
 
-        #df['Returns'] = df.close.pct_change()
-
-        if 'Returns' not in df.columns:df = self.returns(df)
-        temp = df[['time','close','Returns']].copy()
-
-
-        period += 1
-
-        for i in range(1,period):
-            col = 'ret_in_{}h'.format(i)
-            if i == 1:
-                temp[col] = temp.Returns.shift(-i)
-            else:
-                prev = 'ret_in_{}h'.format(i-1)
-                temp[col] = temp[prev] * temp.Returns.shift(-i)
-
-        for i in ['time','close','Returns']:
-            del temp[i]
-
-        df = pd.concat([df, temp], axis=1)
+        arr = df.close.values
+        result = [v1 / v2 for v1,v2 in zip(arr[period:],arr)]
+        for i in range(period):result.insert(-1,None)
+        df['ret_in_{}h'.format(period)] = result
 
         return df
 
     @staticmethod
     def return_over_period(df, period=2):
-        if 'Returns' not in df.columns:df = self.returns(df)
-        #the function returns income over (n) amount of past periods
 
-        arr = df.Returns.values
+        arr = df.close.values
 
         result = [v2 / v1 for v1,v2 in zip(arr,arr[period:])]
 
         for i in range(period):result.insert(0,None)
         df['h{}_ret'.format(period)] = result
-        
+
         return df
 
 
