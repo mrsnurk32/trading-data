@@ -15,16 +15,15 @@ fm.initialize()
 
 class Trader:
 
-    TRADING_DATA = []
-
-    AMOUNT = None
-
     def __init__(self, risk=None, return_=None):
         self._balance = 0
         self._assets = 0
         self._risk = risk
         self._return = return_
         self._max_duration = 4
+        self.TRADING_DATA = list()
+        self.BALANCE = []
+        self.ASSETS = {}
 
     @property
     def balance(self):
@@ -52,12 +51,16 @@ class Trader:
         )
 
         self.TRADING_DATA.append(data)
-        self.AMOUNT = amount
+
+        if ticker in self.ASSETS:
+            self.ASSETS[ticker] += amount
+        else:
+            self.ASSETS[ticker] = amount
 
 
     def sell(self,time,price,amount,ticker):
 
-        if self.AMOUNT - amount < 0:return 'Not enough assets'
+        if self.ASSETS[ticker] - amount < 0:return 'Not enough assets'
 
 
         self.balance = (amount * price)
@@ -66,6 +69,9 @@ class Trader:
             buy_amount = np.nan, sell_price = price, sell_amount = amount
         )
 
+        self.ASSETS[ticker] -= amount
+
+        self.BALANCE.append(dict(date = time, balance = self._balance))
         self.TRADING_DATA.append(data)
 
 
