@@ -8,7 +8,7 @@ import pandas as pd
 import sqlite3 as sql
 from sqlite3 import Error
 import time
-#v. alpha 1.2.1
+#v. alpha 1.2.2
 #Filemanger purpose is maintain all files directories
 #FileManager will also download, store and update Data
 
@@ -139,9 +139,10 @@ class FileManager:
         ymd = [int(i) for i in ymd.split('-')]
         y,m,d = ymd[0],ymd[1],ymd[2]
         utc_from = datetime(y, m, d, tzinfo=timezone)
-
+        print(utc_from)
         rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_H1, utc_from, 50000)
         rates_frame = pd.DataFrame(rates)
+        print(rates)
         rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
         if len(rates_frame) < 1:
             return "Check frame data ticker:{}".format(ticker)
@@ -226,9 +227,11 @@ class FileManager:
         if hour in update_time_lst:
             self.update()
 
+        #self.update()
 
 
-        exhange_mins = 120 #Exchange timer is 2 min ahead
+
+        #exhange_mins = 120 #Exchange timer is 2 min ahead
         current_time = dt.datetime.now().time().strftime('%H:%M:%S').split(':')
 
         h,m = int(current_time[0]),int(current_time[1])
@@ -238,7 +241,7 @@ class FileManager:
 
         time_left = dt.timedelta(
             hours = hour) - dt.timedelta(hours = h,minutes = m,seconds = s)
-        time_left = time_left.total_seconds() + exhange_mins
+        time_left = time_left.total_seconds()
         time.sleep(time_left)
 
     @staticmethod
