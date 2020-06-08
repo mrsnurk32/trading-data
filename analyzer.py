@@ -1,9 +1,7 @@
 import pandas as pd
 import numpy as np
 import sqlite3 as sql
-import matplotlib.pyplot as plt
 import time
-from functools import reduce
 
 
 #This class will be incharge of gatharing analytical data for strategy class
@@ -20,10 +18,18 @@ class Metrics:
 
 
     @staticmethod
-    def get_frame(ticker,simple = False):
+    def quick_frame(conn,ticker,rows = 510):
+        querry = 'SELECT * FROM {} ORDER BY rowid DESC LIMIT {}'.format(ticker,rows)
+        frame = pd.read_sql_query(querry, conn).sort_index(ascending = False)
+        frame.reset_index(drop = True, inplace = True)
+        return frame
+
+
+    @staticmethod
+    def get_frame(ticker,simple = True):
 
         conn = Metrics.connect_to_db()
-        df = Metrics.get_stock_df(ticker,conn)
+        df = Metrics.get_stock_df(ticker,conn,simple = False)
 
         if simple is False:
             df = Metrics.returns(df)
@@ -67,6 +73,30 @@ class Metrics:
                 del df['real_volume']
 
             return df
+
+    @staticmethod
+    def resample(frame):
+
+        frame['time'] = frame['time'].apply(pd.to_datetime)
+        frame['date'] = frame['time'].dt.date
+        del frame['time']
+
+        lst = []
+
+        for i in frame.date.unique():
+            temp = frame[frame.date == i]
+            dct = dict(
+                time = i,open = temp.open.iloc[0],high = temp.high.max(),
+                low = temp.low.min(),close = temp.close.iloc[-1],
+                real_volume = temp.real_volume.sum()
+            )
+            lst.append(dct)
+
+        frame = pd.DataFrame(lst, columns = [
+            'time','open','high','low','close','real_volume'
+        ])
+        return frame
+
 
     #The following part retrieves data from future and past periods
     @staticmethod
@@ -116,7 +146,23 @@ class Metrics:
 
         return df
 
-    #Current metrics
 
-    def current_stats(self):
-        pass
+    #stochastic oscillator
+    @staticmethod
+    def stochastic(df):
+        df['Min'] = df.low.rolling(14).min()
+        df['close-min'] = df.close - df.Min
+        df['H-L'] = df.high.rolling(14).max() - df.low.rolling(14).min()
+        df['K'] = df['close-min'] / df['H-L'] * 100
+        df['SlowK'] = (df['close-min'].rolling(3).sum() / df['H-L'].rolling(3).sum()) * 100
+        return df
+
+    #MACD
+    @staticmethod
+    def macd(frame):
+        frame['EMA12'] = frame.close.ewm(span=12).mean()
+        frame['EMA26'] = frame.close.ewm(span=26).mean()
+        frame['Difference'] = frame.EMA12 - frame.EMA26
+        frame['Signal'] = frame.Difference.ewm(span=9).mean() #9 period ema
+        frame['Histogram'] = frame.Difference - frame.Signal
+        return frame
