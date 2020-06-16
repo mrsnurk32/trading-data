@@ -77,25 +77,14 @@ class Metrics:
     @staticmethod
     def resample(frame):
 
-        frame['time'] = frame['time'].apply(pd.to_datetime)
-        frame['date'] = frame['time'].dt.date
-        del frame['time']
+        frame.time = pd.to_datetime(frame.time)
+        frame.set_index('time',inplace = True)
+        df = frame.resample('D').agg({'open':'first',
+                             'high':'max',
+                             'low':'min',
+                             'close':'last'}).dropna().reset_index()
 
-        lst = []
-
-        for i in frame.date.unique():
-            temp = frame[frame.date == i]
-            dct = dict(
-                time = i,open = temp.open.iloc[0],high = temp.high.max(),
-                low = temp.low.min(),close = temp.close.iloc[-1],
-                real_volume = temp.real_volume.sum()
-            )
-            lst.append(dct)
-
-        frame = pd.DataFrame(lst, columns = [
-            'time','open','high','low','close','real_volume'
-        ])
-        return frame
+        return df
 
 
     #The following part retrieves data from future and past periods
@@ -166,3 +155,31 @@ class Metrics:
         frame['Signal'] = frame.Difference.ewm(span=9).mean() #9 period ema
         frame['Histogram'] = frame.Difference - frame.Signal
         return frame
+
+
+    #Asset with high level of liquidity and long history
+    @staticmethod
+    def approved_tickers():
+    c = sql.connect(
+        '{}/stock_data/fin_data.db'.format(os.getcwd().replace('\\','/'))).cursor()
+
+    table_lst = c.execute(
+        "SELECT name FROM sqlite_master WHERE type='table';")
+
+    table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
+
+    approved = list()
+
+    for ticker in table_lst:
+        frame = mtr.get_frame(ticker,simple = False)
+        if len(frame) < 10000:continue
+        approved.append(ticker)
+
+    confirmed = list()
+
+    for ticker in approved:
+        frame = mtr.quick_frame(mtr.connect_to_db(),ticker)
+        if frame.real_volume.mean() > 10000:
+            confirmed.append(ticker)
+
+    pd.DataFrame({'tickers':confirmed}).to_csv('approved_tickers.csv',index = False)
