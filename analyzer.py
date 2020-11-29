@@ -11,6 +11,8 @@ import time
 # 2. Provides moving data like MA (under development)
 
 # 3. Provides data from financial report (under development)
+
+
 class Metrics:
 
     def __init__(self):
@@ -18,18 +20,35 @@ class Metrics:
 
 
     @staticmethod
-    def quick_frame(conn,ticker,rows = 510):
+    def stock_list():
+
+
+        c = Metrics.connect_to_db().cursor()
+
+        table_lst = c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table';")
+
+        table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
+        table_lst = [i.split('_')[0] for i in table_lst if '1h' in i]
+
+        return table_lst
+
+    @staticmethod
+    def quick_frame(conn,ticker,time_frame = '1h'):
+        ticker = ticker + '_' + time_frame
+        rows = 510
         querry = 'SELECT * FROM {} ORDER BY rowid DESC LIMIT {}'.format(ticker,rows)
         frame = pd.read_sql_query(querry, conn).sort_index(ascending = False)
         frame.reset_index(drop = True, inplace = True)
         return frame
 
-
     @staticmethod
-    def get_frame(ticker,simple = True):
+    def get_frame(ticker,simple,time_frame):
+
+
 
         conn = Metrics.connect_to_db()
-        df = Metrics.get_stock_df(ticker,conn,simple = False)
+        df = Metrics.get_stock_df(ticker,conn,simple,time_frame)
 
         if simple is False:
             df = Metrics.returns(df)
@@ -43,10 +62,10 @@ class Metrics:
         return df
 
 
-
     #This part transforms data from sql to pandas dataframe
     @staticmethod
     def connect_to_db():
+
 
         db_file_path = 'stock_data/fin_data.db'.format()
 
@@ -62,20 +81,25 @@ class Metrics:
                 sqlite3_conn.close()
 
     @staticmethod
-    def get_stock_df(ticker,conn,simple = True):
-            #Returns pandas df
-            querry = "SELECT * from {}".format(ticker)
-            df = pd.read_sql_query(querry, conn)
+    def get_stock_df(ticker,conn,simple,time_frame = '1h'):
 
-            if simple:
-                del df['spread']
-                del df['tick_volume']
-                del df['real_volume']
 
-            return df
+        ticker = ticker + '_' + time_frame
+
+        #Returns pandas df
+        querry = "SELECT * from {}".format(ticker)
+        df = pd.read_sql_query(querry, conn)
+
+        if simple:
+            del df['spread']
+            del df['tick_volume']
+            del df['real_volume']
+
+        return df
 
     @staticmethod
     def resample(frame):
+
 
         frame.time = pd.to_datetime(frame.time)
         frame.set_index('time',inplace = True)
@@ -90,12 +114,15 @@ class Metrics:
     #The following part retrieves data from future and past periods
     @staticmethod
     def returns(df,increment = True):
+
+
         df['Returns'] = df.close.pct_change()
         if increment:df.Returns = df.Returns + 1
         return df
 
     @staticmethod
     def ret_in_n_hour(df, period=4):
+
 
         arr = df.close.values
         result = [v1 / v2 for v1,v2 in zip(arr[period:],arr)]
@@ -106,6 +133,7 @@ class Metrics:
 
     @staticmethod
     def return_over_period(df, period=2):
+
 
         arr = df.close.values
 
@@ -123,12 +151,14 @@ class Metrics:
     @staticmethod
     def get_moving_average(df, period):
 
+
         df['MA{}'.format(ma)] = df.close.rolling(ma).mean()
         return df
 
     #Standard deviation section
     @staticmethod
     def standard_deviation(df,period):
+
 
         if 'Returns' not in df.columns:df = self.returns(df)
         df['STD{}'.format(std)] = temp.Return.rolling(std).std()
@@ -139,6 +169,8 @@ class Metrics:
     #stochastic oscillator
     @staticmethod
     def stochastic(df):
+
+
         df['Min'] = df.low.rolling(14).min()
         df['close-min'] = df.close - df.Min
         df['H-L'] = df.high.rolling(14).max() - df.low.rolling(14).min()
@@ -149,6 +181,8 @@ class Metrics:
     #MACD
     @staticmethod
     def macd(frame):
+
+
         frame['EMA12'] = frame.close.ewm(span=12).mean()
         frame['EMA26'] = frame.close.ewm(span=26).mean()
         frame['Difference'] = frame.EMA12 - frame.EMA26
@@ -157,29 +191,40 @@ class Metrics:
         return frame
 
 
+    @staticmethod
+    def slope(frame):
+
+        frame['slope_25'] = (frame.close - frame.close.shift(25)) / 25
+        frame['slope_12'] = (frame.close - frame.close.shift(12)) / 12
+
+        return frame
+
+
     #Asset with high level of liquidity and long history
     @staticmethod
     def approved_tickers():
-    c = sql.connect(
-        '{}/stock_data/fin_data.db'.format(os.getcwd().replace('\\','/'))).cursor()
 
-    table_lst = c.execute(
-        "SELECT name FROM sqlite_master WHERE type='table';")
 
-    table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
+        c = sql.connect(
+            '{}/stock_data/fin_data.db'.format(os.getcwd().replace('\\','/'))).cursor()
 
-    approved = list()
+        table_lst = c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table';")
 
-    for ticker in table_lst:
-        frame = mtr.get_frame(ticker,simple = False)
-        if len(frame) < 10000:continue
-        approved.append(ticker)
+        table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
 
-    confirmed = list()
+        approved = list()
 
-    for ticker in approved:
-        frame = mtr.quick_frame(mtr.connect_to_db(),ticker)
-        if frame.real_volume.mean() > 10000:
-            confirmed.append(ticker)
+        for ticker in table_lst:
+            frame = mtr.get_frame(ticker,simple = False)
+            if len(frame) < 10000:continue
+            approved.append(ticker)
 
-    pd.DataFrame({'tickers':confirmed}).to_csv('approved_tickers.csv',index = False)
+        confirmed = list()
+
+        for ticker in approved:
+            frame = mtr.quick_frame(mtr.connect_to_db(),ticker)
+            if frame.real_volume.mean() > 10000:
+                confirmed.append(ticker)
+
+        pd.DataFrame({'tickers':confirmed}).to_csv('approved_tickers.csv',index = False)
