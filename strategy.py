@@ -12,22 +12,23 @@ fm.initialize()
 #Designed for back testing
 class TradingBot:
 
-    def __init__(self):
+    def __init__(self,sl,tp,time_frame):
         #self.trader = Trader()
         self.back_trader = Trader()
         self.frame_manager = mtr
-        self.risk = 0.93
-        self.desired_ret = 1.12
+        self.risk = sl
+        self.desired_ret = tp
         self.strategy = None
         self.BUY = []
         self.SELL = []
         self.frame = None
+        self.time_frame = time_frame
 
     def visualize(self):
         f, (ax1,ax2,ax3) = plt.subplots(3,1, sharex=True,figsize=(20,15))
 
         ax1.set_title('Price chart', fontsize=18)
-        ax1.plot(self.frame.index,self.frame.MA200,label = 'MA200')
+        # ax1.plot(self.frame.index,self.frame.MA200,label = 'MA200')
         ax1.plot(self.frame.index,self.frame.close,label = 'close')
         # ax1.plot(self.frame.index,self.frame.low,label = 'low')
         # ax1.plot(self.frame.index,self.frame.high,label = 'high')
@@ -76,12 +77,12 @@ class TradingBot:
 
         self.back_trader = Trader()
         self.back_trader.balance = 100000
-        frame = self.frame_manager.get_frame(ticker)
-        if test:frame = frame.iloc[-1200:].copy()
+        frame = self.frame_manager.get_frame(ticker,simple = True,time_frame = self.time_frame)
+        if test:frame = frame.iloc[-2400:].copy()
         #frame = self.frame_manager.resample(frame)
         #frame['time'] =pd.to_datetime(frame.time)
-        frame = self.strategy.get_strategy_frame(frame)
 
+        frame = self.strategy.get_strategy_frame(frame)
         self.frame = frame
         #frame = frame.iloc[-400:].copy()
         flag = True
