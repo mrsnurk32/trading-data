@@ -36,7 +36,10 @@ class Trader:
 
     @property
     def balance_sheet(self):
-        return pd.DataFrame(self.TRADING_DATA)
+        return pd.DataFrame(self.TRADING_DATA, columns = [
+            'time','ticker','buy_price','buy_amount',
+            'sell_price','sell_amount','reason'
+            ])
 
 
     def buy(self,time,price,amount,ticker):
@@ -47,7 +50,8 @@ class Trader:
         self.balance = (-amount * price)
         data = dict(
             time = time, ticker = ticker, buy_price = price,
-            buy_amount = amount, sell_price = np.nan, sell_amount = np.nan
+            buy_amount = amount, sell_price = np.nan, sell_amount = np.nan,
+            reason = 'Buy order'
         )
 
         self.TRADING_DATA.append(data)
@@ -58,7 +62,7 @@ class Trader:
             self.ASSETS[ticker] = amount
 
 
-    def sell(self,time,price,amount,ticker):
+    def sell(self,time,price,amount,ticker,reason):
 
         if self.ASSETS[ticker] - amount < 0:return 'Not enough assets'
 
@@ -66,7 +70,8 @@ class Trader:
         self.balance = (amount * price)
         data = dict(
             time = time, ticker = ticker, buy_price = np.nan,
-            buy_amount = np.nan, sell_price = price, sell_amount = amount
+            buy_amount = np.nan, sell_price = price, sell_amount = amount,
+            reason = reason
         )
 
         self.ASSETS[ticker] -= amount
@@ -76,29 +81,29 @@ class Trader:
 
 
 
-    def remaining_assets(self,ticker,asset_value=False):
-        data = pd.DataFrame(self.TRADING_DATA)
+    # def remaining_assets(self,ticker,asset_value=False):
+    #     data = pd.DataFrame(self.TRADING_DATA)
+    #
+    #
+    #     #data = pd.DataFrame(data,columns = self.COLUMNS)
+    #
+    #     data = data[data.ticker == ticker]
+    #
+    #     report = data.buy_amount.sum() - data.sell_amount.sum()
+    #     report = report if asset_value == False else (
+    #         report * fm.get_last_price(ticker))
+    #
+    #     return report
 
-
-        #data = pd.DataFrame(data,columns = self.COLUMNS)
-
-        data = data[data.ticker == ticker]
-
-        report = data.buy_amount.sum() - data.sell_amount.sum()
-        report = report if asset_value == False else (
-            report * fm.get_last_price(ticker))
-
-        return report
-
-    @property
-    def total(self):
-        data = pd.DataFrame(self.TRADING_DATA)
-        assets = 0
-        tickers = list(data.ticker.unique())
-        for asset in tickers:
-            assets += self.remaining_assets(asset,True)
-
-        return assets + self.balance
+    # @property
+    # def total(self):
+    #     data = pd.DataFrame(self.TRADING_DATA)
+    #     assets = 0
+    #     tickers = list(data.ticker.unique())
+    #     for asset in tickers:
+    #         assets += self.remaining_assets(asset,True)
+        #
+        # return assets + self.balance
 
     def get_last_price(self,ticker):
         return fm.get_last_price(ticker)
