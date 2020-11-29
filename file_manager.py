@@ -53,7 +53,7 @@ class FileManager:
         return True
 
 
-    def connect_to_db(self):
+    def connect_to_db(self,db = 'hour'):
 
         db_file_path = '{}/stock_data/fin_data.db'.format(
             self.storage_directory)
@@ -103,23 +103,26 @@ class FileManager:
             return True
 
 
-    def updateStamp(self,ticker):
+    def time_frame(self,time_frame):
+        time_frames = {
+            'd1':mt5.TIMEFRAME_D1,
+            '1h':mt5.TIMEFRAME_H1,
+            'min5':mt5.TIMEFRAME_M5
+        }
 
-        conn = self.connect_to_db()
-        c = conn.cursor()
-
-        c.execute("""INSERT INTO stock_info (
-                  Ticker,Currency,Frame,Market,UpdateDate,UpDateHour)
-                  VALUES({},{},{},{},{},{});
-                  """.format(ticker,currency,frame,
-                             market,UpdateDate,UpdateHour))
+        frames = {
+            'd1':'d1',
+            '1h':'1h',
+            'min5':'min5'
+        }
+        return frames[time_frame], time_frames[time_frame]
 
 
-    def download_stock(self,ticker):
+    def download_stock(
+        self,ticker,rows,time_frame,for_trading = True):
 
-        currency = 'Rub'
-        frame = '1H'
-        market = 'ФР МБ'
+
+        frame,mt_t_frame = self.time_frame(time_frame)
 
         #Download scenario
         conn = self.connect_to_db()
@@ -129,68 +132,79 @@ class FileManager:
         #ymd = datetime.today().strftime('%Y-%m-%d')
         ymd = datetime.today()
 
-        if self.work_day:
+        if self.work_day and not for_trading:
+
            delta = dt.timedelta(days = 1)
            ymd = (ymd - delta).strftime('%Y-%m-%d')
            print(ymd)
         else:
-            ymd.strftime('%Y-%m-%d')
+            ymd = ymd.strftime('%Y-%m-%d')
 
         ymd = [int(i) for i in ymd.split('-')]
         y,m,d = ymd[0],ymd[1],ymd[2]
+
+
         utc_from = datetime(y, m, d, tzinfo=timezone)
-        print(utc_from)
-        rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_H1, utc_from, 50000)
+
+        if for_trading and time_frame == '1h':
+            h = datetime.today().hour - 1
+            utc_from = datetime(y, m, d,h, tzinfo=timezone)
+
+        rates = mt5.copy_rates_from(ticker, mt_t_frame, utc_from, rows)
         rates_frame = pd.DataFrame(rates)
-        print(rates)
         rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
+
         if len(rates_frame) < 1:
             return "Check frame data ticker:{}".format(ticker)
-
-        UpdateDate = datetime.today().strftime('%Y.%m.%d')
-        UpdateHour = datetime.now().hour
-
-        rates_frame.to_sql(name=ticker,con = conn,index=False)
-        c = conn.cursor()
-        c.execute("""INSERT INTO stock_info (
-                  Ticker,Currency,Frame,Market,UpdateDate,UpDateHour)
-                  VALUES(?,?,?,?,?,?);
-                  """,(ticker, currency, frame,
-                      market, UpdateDate, UpdateHour))
-        conn.commit()
-        conn.close()
+        ticker = ticker + '_' + frame
+        if not for_trading:
+            rates_frame.to_sql(name=ticker,con = conn,index=False)
+        else:
+            return rates_frame
 
 
-    def update_stock(self, ticker):
+    def update_stock(self, ticker,time_frame = None):
+
+
+        frame,mt_t_frame = self.time_frame(time_frame)
+        print(frame,mt_t_frame)
 
         c = self.connect_to_db()
-
+        ticker_ = ticker + '_' + time_frame
         querry = c.execute(
-             'SELECT * FROM {} ORDER BY time DESC LIMIT 1;'.format(ticker)
+             'SELECT * FROM {} ORDER BY time DESC LIMIT 1;'.format(ticker_)
              ).fetchall()[0][0]
-        date_ = querry.split()[0]
-        date = querry.split()[0].split('-')
 
         timezone = pytz.timezone("Etc/UTC")
 
-        y,m,d = int(date[0]),int(date[1]),int(date[2])
-        start_hour = int(querry.split()[1].split(':')[0]) + 1
-        utc_from = datetime(y, m, d, hour = start_hour, tzinfo=timezone)
+        if time_frame == '1h':
 
-        ymd = datetime.today().strftime('%Y-%m-%d')
-        ymd = [int(i) for i in ymd.split('-')]
-        y,m,d = ymd[0],ymd[1],ymd[2]
+            utc_from = (
+                datetime.strptime(querry,'%Y-%m-%d %H:%M:%S') + dt.timedelta(hours = 1)
+                ).replace(tzinfo=timezone)
 
-        hour = datetime.now().hour - 1
-        utc_to = datetime(y, m, d, hour = hour, tzinfo=timezone)
 
-        today_ = dt.datetime.today().strftime('%Y-%m-%d')
+        if time_frame == 'min5':
+            utc_from = (
+                datetime.strptime(querry,'%Y-%m-%d %H:%M:%S') + dt.timedelta(minutes = 5)
+                ).replace(tzinfo=timezone)
 
-        if start_hour > hour and date_ == today_:return 'Up to date'
 
-        rates = mt5.copy_rates_range(ticker, mt5.TIMEFRAME_H1, utc_from, utc_to)
+        # utc_to = (
+        #     datetime.today()
+        #     ).replace(tzinfo=timezone)
+        d = datetime.today().strftime('%Y-%m-%d').split('-')
+        d = [int(i) for i in d]
+        utc_to = datetime(d[0],d[1],d[2],8,tzinfo=timezone)
+
+        print('Updating from {} to {} ({})'.format(utc_from, utc_to, time_frame))
+        #today_ = dt.datetime.today().strftime('%Y-%m-%d')
+
+
+        rates = mt5.copy_rates_range(ticker, mt_t_frame, utc_from, utc_to)
         rates_frame = pd.DataFrame(rates)
         rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
+        ticker = ticker + '_' + time_frame
         rates_frame.to_sql(
             name=ticker, con=self.connect_to_db(),
             if_exists='append', index=False)
@@ -201,62 +215,30 @@ class FileManager:
         return "Updated"
 
 
-    def update(self):
-
+    def update(self,time_frame):
         c = self.connect_to_db().cursor()
 
         table_lst = c.execute(
             "SELECT name FROM sqlite_master WHERE type='table';")
         table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
-        print(table_lst)
+
+        table_lst = [i.split('_')[0] for i in table_lst if '1h' in i]
 
         hour = datetime.now().hour
 
         for asset in table_lst:
-            self.update_stock(asset)
+            self.update_stock(asset,time_frame)
             print("Updating {}, hour:{}".format(asset,hour))
 
+    def check_data(self):
+        pass
 
-    def update_init(self):
 
-
-        update_time_lst = [i for i in range(10,20)]
+    def update_init(self, time_frame = '1h'):
 
         hour = datetime.now().hour
 
-        if hour in update_time_lst:
-            self.update()
-
-        #self.update()
-
-
-
-        #exhange_mins = 120 #Exchange timer is 2 min ahead
-        current_time = dt.datetime.now().time().strftime('%H:%M:%S').split(':')
-
-        h,m = int(current_time[0]),int(current_time[1])
-        s = int(current_time[2])
-
-        hour = hour + 1
-
-        time_left = dt.timedelta(
-            hours = hour) - dt.timedelta(hours = h,minutes = m,seconds = s)
-        time_left = time_left.total_seconds()
-        time.sleep(time_left)
-
-    @staticmethod
-    def get_last_price(ticker):
-
-        timezone = pytz.timezone("Etc/UTC")
-        ymd = datetime.today()
-        ymd = (ymd + dt.timedelta(days = 1)).strftime('%Y-%m-%d')
-        ymd = [int(i) for i in ymd.split('-')]
-        y,m,d = ymd[0],ymd[1],ymd[2]
-        utc_from = datetime(y, m, d, tzinfo=timezone)
-        rates = mt5.copy_rates_from(ticker, mt5.TIMEFRAME_M1, utc_from, 1)
-        rates_frame = pd.DataFrame(rates)
-        rates_frame['time']=pd.to_datetime(rates_frame['time'], unit='s')
-        return list(rates_frame.close.values)[0]
+        self.update(time_frame)
 
 
     @staticmethod
@@ -308,5 +290,5 @@ if __name__ == "__main__":
 
     #Update every asset
 
-    while True:
-        fm.update_init()
+
+    fm.update_init(time_frame = '1h')
