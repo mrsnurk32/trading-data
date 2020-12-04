@@ -3,6 +3,23 @@ from analyzer import Metrics as mtr
 import datetime as dt
 import numpy as np
 
+
+class MACD_Simple:
+
+    def __init__(self):
+        self.strategy_name = 'MACD_SIMPLE'
+    
+    @staticmethod
+    def get_strategy_frame(frame):
+        frame = mtr.macd(frame)
+        frame['Criteria'] = np.where(
+            frame['EMA12'] > frame['EMA26'], True,False
+        )
+        return frame
+
+
+
+
 class MACD_Hourly:
 
     def __init__(self):
@@ -136,3 +153,5 @@ class Standard_strategy:
         if row.SlowK > self.MA and row.SlowK < self.MA + self.slicer:
             if row.STD50 > row.STD100:
                 return 'Buy'
+
+
