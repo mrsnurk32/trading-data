@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sqlite3 as sql
 import time
+import matplotlib.pyplot as plt
 
 
 #This class will be incharge of gatharing analytical data for strategy class
@@ -228,3 +229,37 @@ class Metrics:
                 confirmed.append(ticker)
 
         pd.DataFrame({'tickers':confirmed}).to_csv('approved_tickers.csv',index = False)
+
+
+
+class BackTester(Metrics):
+    
+    def __init__(self):
+        
+        Metrics.__init__(self)
+        self.take_profit = take_profit
+        self.stop_loss = stop_loss
+        
+    @staticmethod
+    def test_strategy(frame):
+        #frame should be passed with criteria.
+        
+        initial_price = frame.close.iloc[0]
+        frame['ret'] = frame.close.pct_change()
+        frame['Buy & Hold'] = initial_price * (1 + frame['ret']).cumprod()
+        frame['Strategy_returns'] = initial_price * (1 + (frame['Criteria'].shift(1) * frame['ret'] )).cumprod()
+        
+        return frame
+        
+    
+    def evaluate_strategy(self,frame):
+        pass     
+        
+        
+    @staticmethod
+    def visualize(frame):
+        
+        plt.rcParams["figure.figsize"] = [20, 10]
+        return frame[['close', 'Strategy_returns','MA24']].plot(grid=True, kind='line', title="Strategy vs Buy & Hold", logy=True)
+        
+
