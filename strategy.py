@@ -3,11 +3,11 @@ from analyzer import Metrics as mtr
 import matplotlib.pyplot as plt
 import datetime as dt
 import numpy as np
-from file_manager import FileManager as fm
+# from file_manager import FileManager as fm
 import os
 from trader import Trader
 
-fm.initialize()
+# fm.initialize()
 
 #Designed for back testing
 class TradingBot:
