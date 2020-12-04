@@ -9,9 +9,9 @@
 
 import pandas as pd
 import numpy as np
-from file_manager import FileManager as fm
+# from file_manager import FileManager as fm
 import os
-fm.initialize()
+# fm.initialize()
 
 class Trader:
 
