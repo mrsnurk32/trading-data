@@ -232,6 +232,7 @@ class Metrics:
 
 
 
+
 class BackTester(Metrics):
     
     def __init__(self):
@@ -260,6 +261,6 @@ class BackTester(Metrics):
     def visualize(frame):
         
         plt.rcParams["figure.figsize"] = [20, 10]
-        return frame[['close', 'Strategy_returns','MA24']].plot(grid=True, kind='line', title="Strategy vs Buy & Hold", logy=True)
+        return frame[['close', 'Strategy_returns']].plot(grid=True, kind='line', title="Strategy vs Buy & Hold", logy=True)
         
 
