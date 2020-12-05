@@ -252,9 +252,20 @@ class BackTester(Metrics):
         
         return frame
         
-    
-    def evaluate_strategy(self,frame):
-        pass     
+    @staticmethod
+    def evaluate_strategy(frame):
+
+        frame = frame.dropna()
+        
+        strategy_data = dict(
+            
+            net_income = frame.Strategy_returns.iloc[-1] - frame.Strategy_returns.iloc[0],
+            sharpe_ratio = (frame.ret.mean() / frame.ret.std())**(252**0.5),
+            max_drop_down = (frame.Strategy_returns.min() / frame.Strategy_returns.iloc[0]) - 1,  
+        
+        )
+
+        return strategy_data   
         
         
     @staticmethod
