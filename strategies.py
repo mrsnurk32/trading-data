@@ -12,8 +12,9 @@ class MACD_Simple:
     @staticmethod
     def get_strategy_frame(frame):
         frame = mtr.macd(frame)
+        frame['MA_100'] = frame.close.rolling(100).mean()
         frame['Criteria'] = np.where(
-            frame['EMA12'] > frame['EMA26'], True,False
+            (frame['EMA12'] > frame['EMA26']) & (frame.close > frame['MA_100']), True,False
         )
         return frame
 
