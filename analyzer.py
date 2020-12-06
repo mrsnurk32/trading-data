@@ -3,6 +3,7 @@ import numpy as np
 import sqlite3 as sql
 import time
 import matplotlib.pyplot as plt
+import os
 
 
 #This class will be incharge of gatharing analytical data for strategy class
@@ -300,17 +301,17 @@ class BackTester(Metrics):
                 asset_min = df.close.min() / df.close.iloc[0] -1
             )
        
-    frame = frame.iloc[1:]
-    total_result = get_data(df = frame)
-    
-    year_list = frame.time.dt.year.unique()
-
-
-    compare_list = list(map(lambda year:get_data(df = frame, year = year),year_list))
-    
-
-    return pd.DataFrame(compare_list , index = year_list)
+        frame = frame.iloc[1:]
+        total_result = get_data(df = frame)
         
+        year_list = frame.time.dt.year.unique()
+
+
+        compare_list = list(map(lambda year:get_data(df = frame, year = year),year_list))
+        
+
+        return pd.DataFrame(compare_list , index = year_list)
+            
         
     @staticmethod
     def visualize(frame):
