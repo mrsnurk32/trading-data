@@ -238,18 +238,22 @@ class BackTester(Metrics):
     def __init__(self, take_profit, stop_loss):
         
         Metrics.__init__(self)
+        #stop loss and take profit are expressed with integers ex. 1 = 1%
         self.take_profit = take_profit
         self.stop_loss = stop_loss
         
-    @staticmethod
-    def test_strategy(frame):
-        #frame should be passed with criteria.
+
+    def test_strategy(self, frame):
+        #frame should be passed with Criteria column.
 
         initial_price = frame.close.iloc[0]
         frame['ret'] = frame.close.pct_change()
         
+        #row_before checks if previus row is False or True
         row_before = lambda row: frame.Criteria.iloc[row.Index-1]
-        validate_sl = lambda row, sl: row.close - (1/row.close*100) if row.close - (1/row.close*100) >= sl else sl
+
+        #Checks if previous stop loss is lesser
+        validate_sl = lambda row, sl: row.close - (self.stop_loss/row.close*100) if row.close - (self.stop_loss/row.close*100) >= sl else sl
         sl = None
         
         data = list()
@@ -258,7 +262,7 @@ class BackTester(Metrics):
         for row in frame.itertuples():
 
             if row.Criteria and not row_before(row):
-                sl = row.close - (1/row.close*100)
+                sl = row.close - (self.stop_loss/row.close*100)
                 data.append(sl)
             
             
@@ -273,12 +277,10 @@ class BackTester(Metrics):
                 
         frame['stop_loss'] = data
         frame['holding_asset'] = np.where((frame.Criteria) & (frame.close > frame.stop_loss),True,False)        
-        frame['Strategy_returns'] = initial_price * (1 + (frame['holding_asset'].shift(1) * frame['ret'] )).cumprod()
-
-        
-            
-            
+        frame['Strategy_returns'] = initial_price * (1 + (frame['holding_asset'].shift(1) * frame['ret'] )).cumprod()      
+                        
         return frame[['time','close','Criteria','ret', 'stop_loss','holding_asset','Strategy_returns']]
+        
         
     @staticmethod
     def evaluate_strategy(frame):
