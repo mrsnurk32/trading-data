@@ -235,7 +235,7 @@ class Metrics:
 
 class BackTester(Metrics):
     
-    def __init__(self):
+    def __init__(self, take_profit, stop_loss):
         
         Metrics.__init__(self)
         self.take_profit = take_profit
@@ -244,13 +244,41 @@ class BackTester(Metrics):
     @staticmethod
     def test_strategy(frame):
         #frame should be passed with criteria.
-        
+
         initial_price = frame.close.iloc[0]
         frame['ret'] = frame.close.pct_change()
-        frame['Buy & Hold'] = initial_price * (1 + frame['ret']).cumprod()
-        frame['Strategy_returns'] = initial_price * (1 + (frame['Criteria'].shift(1) * frame['ret'] )).cumprod()
         
-        return frame
+        row_before = lambda row: frame.Criteria.iloc[row.Index-1]
+        validate_sl = lambda row, sl: row.close - (1/row.close*100) if row.close - (1/row.close*100) >= sl else sl
+        sl = None
+        
+        data = list()
+        
+        
+        for row in frame.itertuples():
+
+            if row.Criteria and not row_before(row):
+                sl = row.close - (1/row.close*100)
+                data.append(sl)
+            
+            
+            if row.Criteria and row_before(row):
+                sl = validate_sl(row,sl)
+                data.append(sl)
+                
+            
+            if not row.Criteria:
+                data.append(np.nan)
+                
+                
+        frame['stop_loss'] = data
+        frame['holding_asset'] = np.where((frame.Criteria) & (frame.close > frame.stop_loss),True,False)        
+        frame['Strategy_returns'] = initial_price * (1 + (frame['holding_asset'].shift(1) * frame['ret'] )).cumprod()
+
+        
+            
+            
+        return frame[['time','close','Criteria','ret', 'stop_loss','holding_asset','Strategy_returns']]
         
     @staticmethod
     def evaluate_strategy(frame):
