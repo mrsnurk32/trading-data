@@ -50,7 +50,7 @@ class Metrics:
 
         conn = Metrics.connect_to_db()
         df = Metrics.get_stock_df(ticker,conn,simple,time_frame)
-
+        df.time = pd.to_datetime(df.time)
         if simple is False:
             df = Metrics.returns(df)
             df = Metrics.ret_in_n_hour(df)
@@ -279,23 +279,37 @@ class BackTester(Metrics):
         frame['holding_asset'] = np.where((frame.Criteria) & (frame.close > frame.stop_loss),True,False)        
         frame['Strategy_returns'] = initial_price * (1 + (frame['holding_asset'].shift(1) * frame['ret'] )).cumprod()      
                         
-        return frame[['time','close','Criteria','ret', 'stop_loss','holding_asset','Strategy_returns']]
+        return frame
         
-        
+
     @staticmethod
     def evaluate_strategy(frame):
-
-        frame = frame.dropna()
-        
-        strategy_data = dict(
+    #required columns [close, ret]
+    
+        def get_data(df, year = None):
             
-            net_income = frame.Strategy_returns.iloc[-1] - frame.Strategy_returns.iloc[0],
-            sharpe_ratio = (frame.ret.mean() / frame.ret.std())**(252**0.5),
-            max_drop_down = (frame.Strategy_returns.min() / frame.Strategy_returns.iloc[0]) - 1,  
-        
-        )
+            if year is not None:
+                df = df[df.time.dt.year == year].copy()
+                
+            return dict(
+                strategy_net_income = df.Strategy_returns.iloc[-1] / df.Strategy_returns.iloc[0] -1,
+                sharpe_ratio = (df.ret.mean() / df.ret.std())*np.sqrt(len(df)),
+                max_drop_down = (df.Strategy_returns.min() / df.Strategy_returns.iloc[0]) - 1,
+                asset_net_income = df.close.iloc[-1] / df.close.iloc[0] - 1,
+                asset_peak = df.close.max() / df.close.iloc[0] -1,
+                asset_min = df.close.min() / df.close.iloc[0] -1
+            )
+       
+    frame = frame.iloc[1:]
+    total_result = get_data(df = frame)
+    
+    year_list = frame.time.dt.year.unique()
 
-        return strategy_data   
+
+    compare_list = list(map(lambda year:get_data(df = frame, year = year),year_list))
+    
+
+    return pd.DataFrame(compare_list , index = year_list)
         
         
     @staticmethod
