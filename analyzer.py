@@ -309,7 +309,6 @@ class BackTester(Metrics):
 
         compare_list = list(map(lambda year:get_data(df = frame, year = year),year_list))
         
-
         return pd.DataFrame(compare_list , index = year_list)
             
         
