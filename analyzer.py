@@ -99,18 +99,23 @@ class GetFrame(TickerList):
 
 
 class FormatTable(GetFrame):
+    #FormatTable class return stock data frame (time,close) columns are required to be present in frame
 
     #list of columns metatrader provides for timeframes > 1m
-    COLUMN_LIST = [
+    COLUMN_LIST = (
         'time','open', 'high', 'low',
         'close', 'tick_volume', 'spread',
         'real_volume'
-    ]
+    )
 
     #lisf of columns to be deleted if column list == default
-    DEFAULT_COLUMN_LIST = [
+    DEFAULT_COLUMN_LIST = (
         'tick_volume', 'spread', 'real_volume'
-    ]
+    )
+
+    MANDATORY_COLUMNS = (
+        'time', 'close'
+    )
 
     def __init__(self):
 
@@ -124,17 +129,27 @@ class FormatTable(GetFrame):
 
 
     def format_table(self, frame, column_list = 'default'):
-        
-        if column_list == 'default':
 
-            frame_cols = list(frame.columns)
-            [self.validate_column(col = col, col_lst = self.COLUMN_LIST) for col in frame_cols]
+        frame_cols = list(frame.columns) if column_list == 'default' else column_list
+        [self.validate_column(col = col,col_lst = self.COLUMN_LIST) for col in frame_cols]
+
+        if column_list == 'default':
 
             for col in self.DEFAULT_COLUMN_LIST:
                 del frame[col]
 
-            return frame
+        else:
+
+            [self.validate_column(col = col, col_lst = frame_cols) for col in self.MANDATORY_COLUMNS]
+            columns = set(self.COLUMN_LIST).difference(set(column_list))
             
+            for col in columns:
+                del frame[col]
+
+        return frame
+
+
+        
 
 
 
