@@ -5,7 +5,6 @@ import time
 import matplotlib.pyplot as plt
 import os
 
-
 #This class will be incharge of gatharing analytical data for strategy class
 
 # 1. Provides current statistics for trading desicion
@@ -13,6 +12,8 @@ import os
 # 2. Provides moving data like MA (under development)
 
 # 3. Provides data from financial report (under development)
+class CustomError(Exception):
+    pass
 
 class MetricsDB:
     #The class will try to establish connection with DB
@@ -38,7 +39,6 @@ class MetricsDB:
        raise NotImplemented
 
 
-
 class TickerList(MetricsDB):
     #Returns stock list as list
 
@@ -57,7 +57,7 @@ class TickerList(MetricsDB):
 
         table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
         table_lst = [i.split('_')[0] for i in table_lst if '1h' in i]
-
+        #Must return list of tickers that are located in DB
         return table_lst
 
     
@@ -65,8 +65,100 @@ class TickerList(MetricsDB):
         raise NotImplemented
 
     
+class GetFrame(TickerList):
+    #Gets ticker data from DB
+
+    def __init__(self):
+        super().__init__()
+        self.conn = self.connect_to_db()
 
 
+    def ticker_is_valid(self, ticker, time_frame):
+
+        if ticker not in self.ticker_list:
+            raise Exception('Ticker is not in the list')
+
+        ACCEPTED_TIME_FRAMES = ['1h', '1D']
+        if time_frame not in ACCEPTED_TIME_FRAMES:
+            raise Exception(f'Time frame for "{ticker} is not supported"')
+
+        return True
+
+    
+    def get_short_frame(self, ticker, rows=500, time_frame='1h'):
+
+        if self.ticker_is_valid(ticker, time_frame):
+
+            ticker = ticker + '_' + time_frame
+            querry = f'SELECT * FROM {ticker} ORDER BY rowid DESC LIMIT {rows}'
+
+            frame = pd.read_sql_query(querry, self.conn).sort_index(ascending = False)
+            frame.reset_index(drop = True, inplace = True)
+
+            return frame
+
+
+class FormatTable(GetFrame):
+
+    #list of columns metatrader provides for timeframes > 1m
+    COLUMN_LIST = [
+        'time','open', 'high', 'low',
+        'close', 'tick_volume', 'spread',
+        'real_volume'
+    ]
+
+    #lisf of columns to be deleted if column list == default
+    DEFAULT_COLUMN_LIST = [
+        'tick_volume', 'spread', 'real_volume'
+    ]
+
+    def __init__(self):
+
+        super().__init__()
+
+
+    def validate_column(self, col, col_lst):
+
+        if col not in col_lst:
+            raise Exception(f"Column {col} not found in data set")
+
+
+    def format_table(self, frame, column_list = 'default'):
+        
+        if column_list == 'default':
+
+            frame_cols = list(frame.columns)
+            [self.validate_column(col = col, col_lst = self.COLUMN_LIST) for col in frame_cols]
+
+            for col in self.DEFAULT_COLUMN_LIST:
+                del frame[col]
+
+            return frame
+            
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+
+
+class Metrics(FormatTable):
+
+    def __init__(self):
+        super().__init__()
+
+    def frame(self, ticker, rows = 500, time_frame = '1h'):
+        return self.get_short_frame(ticker)
 
 
 
