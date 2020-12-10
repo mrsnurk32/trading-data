@@ -107,7 +107,10 @@ class GetFrame(TickerList):
 
             if type(column_list) is list:
 
+                #Checks if every column is valid for querry
                 [self.validate_column(col = col,col_lst = self.COLUMN_LIST) for col in column_list]
+                
+                #Checks if required columns are present in the list
                 [self.validate_column(col = col, col_lst = column_list) for col in self.MANDATORY_COLUMNS]
                 column_list = ', '.join(column_list)
           
