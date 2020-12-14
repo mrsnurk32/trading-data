@@ -60,7 +60,7 @@ class TickerList(MetricsDB):
 
     
 class GetFrame(TickerList):
-    #Gets ticker data from DB by creating querries
+    #Gets ticker data from DB by creating queries
 
     ACCEPTED_TIME_FRAMES = ('1h', '1D')
 
@@ -122,93 +122,17 @@ class GetFrame(TickerList):
 
             frame = pd.read_sql_query(querry, self.conn).sort_index(ascending = False)
             frame.reset_index(drop = True, inplace = True)
+            frame.time = pd.to_datetime(frame.time)
 
-            return frame
-
-
-
+            return frame      
         
 
-
-class Metrics(GetFrame):
-
+class DataManager(GetFrame):
+    
     def __init__(self):
         super().__init__()
 
 
-
-
-
-# class Metrics:
-
-#     def __init__(self):
-#         pass
-
-
-
-
-#     @staticmethod
-#     def quick_frame(conn,ticker,time_frame = '1h'):
-#         ticker = ticker + '_' + time_frame
-#         rows = 510
-#         querry = 'SELECT * FROM {} ORDER BY rowid DESC LIMIT {}'.format(ticker,rows)
-#         frame = pd.read_sql_query(querry, conn).sort_index(ascending = False)
-#         frame.reset_index(drop = True, inplace = True)
-#         return frame
-
-#     @staticmethod
-#     def get_frame(ticker,simple,time_frame):
-
-
-
-#         conn = Metrics.connect_to_db()
-#         df = Metrics.get_stock_df(ticker,conn,simple,time_frame)
-#         df.time = pd.to_datetime(df.time)
-#         if simple is False:
-#             df = Metrics.returns(df)
-#             df = Metrics.ret_in_n_hour(df)
-
-#             period_sequence = [8,100]
-
-#             for period in period_sequence:
-#                 df = Metrics.return_over_period(df,period)
-
-#         return df
-
-
-#     #This part transforms data from sql to pandas dataframe
-#     @staticmethod
-
-
-#     @staticmethod
-#     def get_stock_df(ticker,conn,simple,time_frame = '1h'):
-
-
-#         ticker = ticker + '_' + time_frame
-
-#         #Returns pandas df
-#         querry = "SELECT * from {}".format(ticker)
-#         df = pd.read_sql_query(querry, conn)
-
-#         if simple:
-#             del df['spread']
-#             del df['tick_volume']
-#             del df['real_volume']
-
-#         return df
-
-#     @staticmethod
-#     def resample(frame):
-
-
-#         frame.time = pd.to_datetime(frame.time)
-#         frame.set_index('time',inplace = True)
-#         df = frame.resample('D').agg({'open':'first',
-#                              'high':'max',
-#                              'low':'min',
-#                              'close':'last'}).dropna().reset_index()
-
-#         return df
 
 
 #     #The following part retrieves data from future and past periods
