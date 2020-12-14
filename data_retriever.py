@@ -124,7 +124,46 @@ class GetFrame(TickerList):
             frame.reset_index(drop = True, inplace = True)
             frame.time = pd.to_datetime(frame.time)
 
-            return frame      
+            return frame 
+
+#Need transfer data to postgres sql
+
+# class ResampleHourData(GetFrame):
+
+#     def __init__(self):
+#         super().__init__()
+
+#     def get_resampled_data(self, ticker, rows=None, time_frame='1h', to_time_frame = None ,column_list = '*'):
+        
+        
+#         if self.ticker_is_valid(ticker, time_frame):
+
+#             if type(column_list) is list:
+
+#                 #Checks if every column is valid for querry
+#                 [self.validate_column(col = col,col_lst = self.COLUMN_LIST) for col in column_list]
+                
+#                 #Checks if required columns are present in the list
+#                 [self.validate_column(col = col, col_lst = column_list) for col in self.MANDATORY_COLUMNS]
+#                 column_list = ', '.join(column_list)
+          
+#             ticker = ticker + '_' + time_frame
+#             querry = f"""SELECT date_trunc('day', time) AS date_truncated_to_hour,
+#                 MIN(low) as min_low,
+#                 FIRST_VALUE(open) as first_open,
+#                 LAST_VALUE(close) as last_close,
+#                 MAX(high) as max_high
+#                 FROM {ticker} DESC
+#             """
+
+#             if rows is not None:
+#                 querry += f' LIMIT {rows}'
+
+#             frame = pd.read_sql_query(querry, self.conn).sort_index(ascending = False)
+#             frame.reset_index(drop = True, inplace = True)
+#             frame.time = pd.to_datetime(frame.time)
+
+#             return frame        
         
 
 class DataManager(GetFrame):
