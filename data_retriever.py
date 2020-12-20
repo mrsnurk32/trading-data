@@ -36,23 +36,19 @@ class MetricsDB:
 class TickerList(MetricsDB):
     #Returns stock list as list
 
-    def __init__(self):
-
-        self._ticker_list = self.connect_to_db()
-
-
     @property
     def ticker_list(self):
 
-        c = self._ticker_list.cursor()
+        with self.connect_to_db() as c:
+            
+            table_lst = c.execute(
+                "SELECT name FROM sqlite_master WHERE type='table';")
 
-        table_lst = c.execute(
-            "SELECT name FROM sqlite_master WHERE type='table';")
+            table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
+            table_lst = [i.split('_')[0] for i in table_lst if '1h' in i]
 
-        table_lst = [i[0] for i in table_lst.fetchall() if i[0] != 'stock_info']
-        table_lst = [i.split('_')[0] for i in table_lst if '1h' in i]
-        #Must return list of tickers that are located in DB
-        return table_lst
+            #Must return list of tickers that are located in DB
+            return table_lst
 
     
     def approved_tickers(self):
@@ -81,7 +77,6 @@ class GetFrame(TickerList):
 
     def __init__(self):
         super().__init__()
-        self.conn = self.connect_to_db()
 
 
     def ticker_is_valid(self, ticker, time_frame):
@@ -120,11 +115,14 @@ class GetFrame(TickerList):
             if rows is not None:
                 querry += f' LIMIT {rows}'
 
-            frame = pd.read_sql_query(querry, self.conn).sort_index(ascending = False)
-            frame.reset_index(drop = True, inplace = True)
-            frame.time = pd.to_datetime(frame.time)
+            with self.connect_to_db() as conn:
+                frame = pd.read_sql_query(querry, conn).sort_index(ascending = False)
+                frame.reset_index(drop = True, inplace = True)
+                frame.time = pd.to_datetime(frame.time)
 
-            return frame 
+                return frame 
+
+
 
 #Need transfer data to postgres sql
 
