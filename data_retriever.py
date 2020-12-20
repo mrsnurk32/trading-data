@@ -123,6 +123,10 @@ class GetFrame(TickerList):
                 return frame 
 
 
+class DataManager(GetFrame):
+    
+    def __init__(self):
+        super().__init__()
 
 #Need transfer data to postgres sql
 
@@ -164,10 +168,7 @@ class GetFrame(TickerList):
 #             return frame        
         
 
-class DataManager(GetFrame):
-    
-    def __init__(self):
-        super().__init__()
+
 
 
 
