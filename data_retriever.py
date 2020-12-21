@@ -108,6 +108,9 @@ class GetFrame(TickerList):
                 #Checks if required columns are present in the list
                 [self.validate_column(col = col, col_lst = column_list) for col in self.MANDATORY_COLUMNS]
                 column_list = ', '.join(column_list)
+            
+            else:
+                column_list = '*'
 
 
             ticker = ticker + '_' + time_frame
