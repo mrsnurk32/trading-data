@@ -1,11 +1,7 @@
-This project is dedicated to collect stock data from MetaTrader
+Данный проект выгружает данные из metatrader5 а также предоставляет возможность протестировать стратегию.
 
-On the first stage app is going to collect following Data and store it to SQL DataBase:
-1. Date OHLC,Volume
-
-Frame rate - hour
-
-It will also update data during trading sessions.
-
-# trading-data
-Retrieves stock data from MetaTrader5
+dataretriever.py - выгружает данные из бд
+file_manager.py - Выгружает данные из терминала и сохраняет в бд.
+strategies.py - Стратегии которые можно протестировать
+backtester.py - Тестирует стратегии
+BackTestingNoteBook - показан результат работы кода
