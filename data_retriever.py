@@ -10,12 +10,11 @@ class CustomError(Exception):
     pass
 
 class MetricsDB:
-    #The class will try to establish connection with DB
+    #The class establishes connection with DB.
 
     def connect_to_db(self):
 
         db_file_path = 'stock_data/fin_data.db'.format()
-
         sqlite3_conn = None
 
         try:
@@ -56,7 +55,7 @@ class TickerList(MetricsDB):
 
     
 class GetFrame(TickerList):
-    #Gets ticker data from DB by creating queries
+    #Generates query to get stock info from DB
 
     ACCEPTED_TIME_FRAMES = ('1h', '1D')
 
@@ -78,7 +77,7 @@ class GetFrame(TickerList):
     def __init__(self):
         super().__init__()
 
-
+    #Checks if ticker is in DB
     def ticker_is_valid(self, ticker, time_frame):
 
         if ticker not in self.ticker_list:
@@ -89,13 +88,14 @@ class GetFrame(TickerList):
 
         return True
 
-
+    #Checks if column exists
     def validate_column(self, col, col_lst):
 
         if col not in col_lst:
             raise Exception(f"Column {col} not found in data set \n {self.COLUMN_LIST} - list of acceptable columns")
 
     
+    #gets data and creates pandas frame. column_list takes list or '*' as parameter
     def get_frame(self, ticker, rows=None, time_frame='1h', column_list = '*'):
 
         if self.ticker_is_valid(ticker, time_frame):
@@ -108,7 +108,8 @@ class GetFrame(TickerList):
                 #Checks if required columns are present in the list
                 [self.validate_column(col = col, col_lst = column_list) for col in self.MANDATORY_COLUMNS]
                 column_list = ', '.join(column_list)
-          
+
+
             ticker = ticker + '_' + time_frame
             querry = f'SELECT {column_list} FROM {ticker} ORDER BY rowid DESC'
 
@@ -120,13 +121,26 @@ class GetFrame(TickerList):
                 frame.reset_index(drop = True, inplace = True)
                 frame.time = pd.to_datetime(frame.time)
 
-                return frame 
+                return frame
+            
+            
 
 
 class DataManager(GetFrame):
     
     def __init__(self):
         super().__init__()
+
+
+
+
+
+
+
+
+
+
+
 
 #Need transfer data to postgres sql
 
